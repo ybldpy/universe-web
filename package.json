@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "image-js": "^0.35.5",
+    "lerc": "^4.0.4",
+    "stats.js": "^0.17.0",
+    "three": "^0.162.0",
+    "three-stdlib": "^2.29.7"
+  },
+  "devDependencies": {
+    "@types/dat.gui": "^0.7.12",
+    "dat.gui": "^0.7.9",
+    "vite": "^5.1.4"
+  }
+}

@@ -1,0 +1,87 @@
+export const planets = [
+
+
+    {
+        identifier: "solarSystem",
+        parent: "root",
+        transformation: {
+            position: [0,0,0],
+            rotation: [0,0,0],
+            scaling:[1,1,1]
+        }
+    },
+
+    {
+        identifier: "sunCenter",
+        parent: "solarSystem",
+        transformation: {
+            position: [0,0,0],
+            rotation: [0,0,0],
+            scaling: [1,1,1]
+        }
+    },
+    {
+        identifier: "sun",
+        parent: "sunCenter",
+        reachRadius:7000e3,
+        transformation: {
+            position: [0,0,0],
+            rotation:[0,0,0],
+            scaling: [1,1,1]
+        },
+        renderableObject: {
+            radius: 6950e5,
+            layers:[
+                {
+                    type:"color",
+                    maxLevel: 2,
+                    requestUrlFormat: "/data/asset/sun/tile/0/0/0.jpg"
+                }
+            ]
+        }
+    },
+
+
+    {
+        identifier:"earth",
+        parent:"solarSystem",
+        reachRadius:6550e3,
+        transformation:{
+            position:[1.5e11,0,0],
+            rotation:[0,0,0],
+            scaling:[1,1,1]
+        },
+        renderableObject:{
+            radius:6538e3,
+            layers:[
+                {
+                    type:"color",
+                    maxLevel:13,
+                    requestUrlFormat:"http://localhost:8001/color/{z}/{y}/{x}.jpg"
+                }
+            ]
+        }
+    },
+
+    {
+        identifier: "moon",
+        parent:"earth",
+        reachRadius:3850e3,
+        transformation: {
+            position:[1000e5,1000e5,2050e5],
+            rotation: [0,0,0],
+            scaling: [1,1,1],
+        },
+        renderableObject:{
+            radius:3830e3,
+            layers:[
+                {
+                    type:"color",
+                    maxLevel:13,
+                    requestUrlFormat:"http://localhost:8002/color/{z}/{y}/{x}.jpg"
+                }
+            ]
+        }
+    }
+
+]
