@@ -1,8 +1,4 @@
 import { FrameBufferRenderer } from "./renderer";
-import * as THREE from "three";
-import {WebGLRenderer} from "three";
-import {Scene} from "./scene";
-import scene from "three/addons/offscreen/scene";
 export class RenderEngine{
     constructor(webGlRender,threeJsScene,camera){
         this.threeJsScene = threeJsScene;

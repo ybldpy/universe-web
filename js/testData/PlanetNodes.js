@@ -1,3 +1,8 @@
+import {SceneGraphNode} from "../rendering/scene";
+import {RenderableStars} from "../renderable/stars";
+import {appContext} from "../applicationContext";
+import {RenderableOrbit} from "../renderable/renderableOrbit";
+
 export const planets = [
 
 
@@ -52,6 +57,7 @@ export const planets = [
             scaling:[1,1,1]
         },
         renderableObject:{
+            type:"renderableGlobe",
             radius:6538e3,
             layers:[
                 {
@@ -73,6 +79,7 @@ export const planets = [
             scaling: [1,1,1],
         },
         renderableObject:{
+            type:"renderableGlobe",
             radius:3830e3,
             layers:[
                 {
@@ -83,5 +90,25 @@ export const planets = [
             ]
         }
     }
-
 ]
+
+
+
+
+
+export function createStarsTestNode(){
+    const renderableStars = new RenderableStars("http://localhost:8000/3.bin");
+    const root = appContext.scene.findNodeByIdentifier("root");
+    const node = new SceneGraphNode({identifier:"testStars",parentNode:root,renderableObject:renderableStars});
+    return node;
+}
+
+export function createOrbitTestNode(){
+    const renderableStars = new RenderableOrbit("earth");
+    const root = appContext.scene.findNodeByIdentifier("root");
+    const node = new SceneGraphNode({identifier:"earthOrbit",parentNode:root,renderableObject:renderableStars});
+    return node;
+
+
+
+}

@@ -102,7 +102,6 @@ export class GaiaStars{
             const offset = i*itemSize*colNums
             for(let u = 0;u<3;u++){
                 this.positions.push(dataViewer.getFloat32(offset+u*itemSize,true));
-                //this.positions.push(Math.random()*5+.2)
             }
         }
     }

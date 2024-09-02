@@ -1,32 +1,73 @@
+import * as THREE from "three";
 import {RenderEngine} from "./rendering/renderEngine";
 import {Scene, SceneGraphNode} from "./rendering/scene";
-import {planets} from "./testData/PlanetNodes";
+import {planets,createStarsTestNode,createOrbitTestNode} from "./testData/PlanetNodes";
 import {RenderablePlanet} from "./globeBrowsing";
 import {Transformation} from "./rendering/base";
-import * as THREE from "three";
-import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {RenderableBackgroundSphere} from "./renderableBackgroundSphere";
 import {Navigator} from "./navigation/navigator";
 import {InteractionHandler} from "./interaction/interactionHandler";
 import {Timer} from "three/addons/misc/Timer.js";
+import {appContext} from "./applicationContext";
+import * as dat from 'dat.gui';
 
 class App{
+
+
+
     constructor(webGlRender,threeJsScene,camera) {
         this.renderEngine = new RenderEngine(webGlRender,threeJsScene,camera);
+
         this.scene = new Scene();
         this.renderEngine.setScene(this.scene);
+        appContext.camera = camera;
+        appContext.scene = this.scene;
+        this.camera = camera;
+        this.camera.position.set(0,0,6000e5);
+        this.camera.lookAt(0,0,0);
+
+        this.navigator = new Navigator(this.camera,new InteractionHandler(webGlRender.domElement));
+        appContext.navigator = this.navigator;
+
         const sceneGraphNode = new SceneGraphNode({identifier:"galaxy"});
         sceneGraphNode.parentNode = this.scene.findNodeByIdentifier("root");
         sceneGraphNode.renderableObject = new RenderableBackgroundSphere(1e16,"/data/eso_dark.jpg");
         this.scene.addNode(sceneGraphNode);
+        this.scene.addNode(createOrbitTestNode());
+        this.scene.addNode(createStarsTestNode());
         planets.forEach((i)=>{this.addGraphNode(i);});
-        this.camera = camera;
-        this.camera.position.set(0,0,6000e5);
-        this.camera.lookAt(0,0,0);
         //this.controls = new OrbitControls(camera,webGlRender.domElement);
-        this.navigator = new Navigator(this.camera,new InteractionHandler(webGlRender.domElement),this.scene.findNodeByIdentifier("earth"));
+        this.navigator.orbitNavigator.setFocusNode(this.scene.findNodeByIdentifier("earth"));
         this.timer = new Timer();
+        this.initUI();
     }
+
+    initUI(){
+
+
+
+        this.ui = new dat.GUI();
+        const nodeIds = [];
+        this.scene.getAllNodes().forEach(node=>{
+           if (node.renderableObject!=null){
+               nodeIds.push(node.getIdentifier());
+           }
+        });
+
+        const focus = {
+            focusNode:this.navigator.orbitNavigator.getFocusNode().getIdentifier()
+        }
+        this.focusNodeUI = this.ui.add(focus,"focusNode",nodeIds).onChange(value=>{
+            const nextFocusNode = this.scene.findNodeByIdentifier(value);
+            // this.navigator.orbitNavigator.setNeedTarget(true);
+            // this.navigator.orbitNavigator.setFocusNode(nextFocusNode);
+            this.navigator.pathNavigator.flyTo(nextFocusNode,this.camera);
+        });
+
+
+    }
+
+
     render(timeStamp){
         requestAnimationFrame((t)=>{this.render(t)});
         // this.controls.update();

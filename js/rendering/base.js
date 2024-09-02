@@ -11,7 +11,6 @@ export class Transformation{
      * @param scaling:vec3
      */
     constructor(translation = new THREE.Vector3(),rotation=new THREE.Matrix4(),scaling = new THREE.Vector3(1,1,1)){
-
         this.translation = translation;
         this.rotation = rotation;
         this.scaling = scaling;
@@ -33,10 +32,7 @@ export class RenderData{
     
 }
 export class RenderableObject{
-
     constructor(){}
-
     update(updateData){}
-    render(RenderData){}
-
+    render(renderData){}
 }
