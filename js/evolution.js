@@ -6,14 +6,17 @@ import { EffectComposer, OutlinePass, OutputPass } from 'three/examples/jsm/Addo
 import { RenderPass } from 'three/examples/jsm/Addons.js';
 import { BloomPass } from 'three/examples/jsm/Addons.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { Timer } from 'three/examples/jsm/misc/Timer.js';
+
+
 var stats = new Stats();
 stats.showPanel( 1 ); // 0: fps, 1: ms, 2: mb, 3+: custom
 // document.body.appendChild( stats.dom );
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 1e20 );
-const colorMapUrl = '/data/color.cmap';
-const starDataUrl = '/data/nbin_new';
+const colorMapUrl = '/data/evolution/color.cmap';
+const starDataUrl = '/data/evolution/nbin_new';
 const renderer = new THREE.WebGLRenderer();
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene,camera));
@@ -33,46 +36,72 @@ const gui = new dat.GUI({})
 const shaderParameters = {
     colorScale:1.0
 }
+
+
+const processorControl = {
+    paused:false,
+    resetFlag:false,
+    onPause:function (){
+        this.paused = true;
+    },
+    resume:function (){
+        this.paused = false;
+    },
+    reset:function(){
+        this.resetFlag = true
+    }
+}
+
+const evolutionSpeed = {
+    speed:1
+}
+
+const progress = {
+    progressText:"0/0"
+}
+gui.add(progress,"progressText").listen().name("Progress")
+
+
+
 gui.add(shaderParameters,"colorScale").onChange((e)=>{
-    
     globularEvolution.shader.uniforms.colorScale.value = e;
 });
+
+const controlFolder = gui.addFolder("Control")
+controlFolder.open();
+controlFolder.add(processorControl,"onPause").name("Pause")
+controlFolder.add(processorControl,"resume").name("Resume")
+controlFolder.add(processorControl,"reset").name("Reset")
+
+gui.add(evolutionSpeed,"speed",1,100,1).name("Speed")
+
+
+
+
+
 globularEvolution.shader.uniforms.colorScale.value = shaderParameters.colorScale;
-import { Timer } from 'three/examples/jsm/misc/Timer.js';
+
+
 const timer = new Timer();
 function update(timeStampe){
     requestAnimationFrame(update);
     timer.update(timeStampe);
     controls.update();
-    globularEvolution.update(scene,camera,timer.getDelta() * 1e3);
+
+    let deltaTime = timer.getDelta() * 1e3;
+    deltaTime *= evolutionSpeed.speed * 0.5;
+    if (processorControl.paused){
+        deltaTime = 0;
+    }
+    if (processorControl.resetFlag){
+        globularEvolution.reset();
+        processorControl.resetFlag = false;
+    }
+    progress.progressText = `${globularEvolution.getCurrentIndex()}/${globularEvolution.getMaxIndex()}`
+    globularEvolution.update(scene,camera,deltaTime);
     stats.begin()
     renderer.render(scene,camera);
     stats.end()
 }
-
-
-function moveCamera(code){
-    const speed = 1e2;
-    const dictFromCenterToCam = camera.position.clone();
-    dictFromCenterToCam.normalize();
-    // const moveDict = dictFromCenterToCam;
-    // if(code == 1){
-    //     moveDict.negate();
-    // }
-
-    // camera.position.addScaledVector(moveDict,speed);
-    controls.update();
-}
-
-// window.onload = function(){
-//     document.getElementById("x-").onclick = ()=>{moveCamera(1);}
-//     document.getElementById("x+").onclick = ()=>{moveCamera(2);}
-//     document.getElementById("y-").onclick = ()=>{moveCamera(3);}
-//     document.getElementById("y+").onclick = ()=>{moveCamera(4);}
-//     document.getElementById("z-").onclick = ()=>{moveCamera(5);}
-//     document.getElementById("z+").onclick = ()=>{moveCamera(6);}
-
-// }
-
 
 update();

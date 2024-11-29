@@ -30,19 +30,19 @@ camera.lookAt(0,0,0)
 // camera.position.set(-2,-2,-2);
 const ui = {
     wireFrame:false,
-    multiplier:1,
+    multiplier:15000,
     chunkEdge:false
 }
 
 
 const atmosphereUI = {
-    intensity:10,
-    scatteringStrength:10,
-    falloff:10,
-    density:10,
-    redWave:700,
+    intensity:14,
+    scatteringStrength:2,
+    falloff:15,
+    density:3,
+    redWave:800,
     greenWave:700,
-    blueWave:700
+    blueWave:570
 }
 
 const utils = {
@@ -499,24 +499,28 @@ class HeightTileProvider extends TileProvider{
                 return;
             }
             //let dataView = new DataView(image.data.buffer);
-            let type = THREE.UnsignedByteType;
+            let type = THREE.FloatType;
             // let heightBuffer = image.data;
-            let heightBuffer = new Float32Array(image.data.length);
-            if(image.bitDepth==16){
-                const signedShortBuffer = new Int16Array(image.data.buffer);
-                //const float32Buffer = new Float32Array(heightBuffer.length);
-                for(let i=0;i<heightBuffer.length;i++){
-                    heightBuffer[i] = signedShortBuffer[i];
-                }
-                type = THREE.FloatType;
+            let heightBuffer = null;
+            let typedBuffer = null;
+            if (image.bitDepth == 8){
+                typedBuffer = new Uint8Array(image.data.buffer);
+            }
+            else if(image.bitDepth==16){
+                typedBuffer = new Int16Array(image.data.buffer);
+
             }
             else if(image.bitDepth==32){
-                heightBuffer = image.data;
-                type = THREE.FloatType; 
+                typedBuffer = new Float32Array(image.data.buffer);
             }
-            tile.maxPixelValue = image.maxValue;
+            heightBuffer = new Float32Array(typedBuffer.length);
+            let minValue = 0;
+
+            typedBuffer.forEach((v,i)=>{heightBuffer[i] = v;minValue = min(minValue,v)});
             const dataTexture = new THREE.DataTexture(heightBuffer,image.width,image.height,THREE.RedFormat,type);
             tile.texture = dataTexture;
+            tile.minPixelValue = minValue;
+            tile.maxPixelValue = image.maxValue;
             texture.magFilter = THREE.NearestFilter;
             texture.minFilter = THREE.NearestFilter;
             texture.generateMipmaps = true;
@@ -2250,12 +2254,14 @@ class FrameBufferRenderer{
 
 
 
+const testEnv = true;
+
+let earthColorTileUrlFormat = testEnv?"http://localhost:8001/color/{z}/{y}/{x}.jpg":"/data/tile/earth_uploadedTile/color/{z}/{y}/{x}.jpg";
+//earthColorTileUrlFormat = "http://121.40.212.118:5000/data/tile/earth_uploadedTile/color/{z}/{y}/{x}.jpg"
 const frameBufferRenderer = new FrameBufferRenderer(null);
-//const planet = new Planet(6358e3,[new Layer(new SingleImageTileProvider("/data/1_earth_16k.jpg"),Layer.TYPE.COLOR),new Layer(new SingleImageTileProvider("/data/earth_bluemarble_height.jpg"),Layer.TYPE.HEIGHT)])
-//const planet = new Planet(6358e3,[new Layer(new TileProvider("https://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",13),Layer.TYPE.COLOR),new Layer(new SingleImageTileProvider("/data/earth_bluemarble_height.jpg"),Layer.TYPE.HEIGHT)])
-const planet = new Planet(6358e3,[new Layer(new TileProvider("http://localhost:8001/color/{z}/{y}/{x}.jpg",12),Layer.TYPE.COLOR),new Layer(new SingleImageTileProvider("/data/earth_bluemarble_height.jpg"),Layer.TYPE.HEIGHT)])
-const moon = new Planet(1737e3,[new Layer(new TileProvider("http://localhost:8002/color/{z}/{y}/{x}.jpg",7),Layer.TYPE.COLOR),new Layer(new HeightTileProvider("http://localhost:8002/height/{z}/{y}/{x}.png",6),Layer.TYPE.HEIGHT)]);
-const gaiaStars = new GaiaStars("http://localhost:8000/3.bin",scene)
+const planet = new Planet(6358e3,[new Layer(new TileProvider(earthColorTileUrlFormat,12),Layer.TYPE.COLOR),new Layer(new SingleImageTileProvider("/data/earth_bluemarble_height.jpg",0),Layer.TYPE.HEIGHT)]);
+const moon = new Planet(1737e3,[new Layer(new TileProvider("http://localhost:8002/color/{z}/{y}/{x}.jpg",7),Layer.TYPE.COLOR),new Layer(new HeightTileProvider("http://localhost:8002/height/{z}/{y}/{x}.png",5),Layer.TYPE.HEIGHT)]);
+//const gaiaStars = new GaiaStars("http://localhost:8000/3.bin",scene)
 
 const atmosphere = new RenderableAtmosphere(planet,6600e3,new THREE.Vector3(0.5, 0.65, 1));
 const orbitNavigator = new OrbitNavigator(new InteractionHandler(renderer.domElement));
@@ -2269,7 +2275,7 @@ window.innerHeight / 2, window.innerHeight / -2, 0.1,1e15);
 const xXis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(2000e3,0,0),new THREE.Vector3(),new THREE.Vector3(0,2000e3,0),new THREE.Vector3(),new THREE.Vector3(0,0,2000e3)]),new THREE.LineBasicMaterial({color:0x00ff00,linewidth:300}));
 // const sphere = new THREE.Mesh(new THREE.SphereGeometry(300e3,64,64),new THREE.MeshBasicMaterial({color:0x00ff00}))
 // sphere.position.set(3000e3,100e3,100e3)
-scene.add(xXis)
+// scene.add(xXis)
 function render(timerStamp){
     requestAnimationFrame(render);
     // controls.update();
@@ -2285,7 +2291,7 @@ function render(timerStamp){
     planet.render(camera,scene);
     //gaiaStars.render(camera)
     //moon.render(camera,scene)
-    atmosphere.render(camera,scene,frameBufferRenderer.getPostProcessShaderQueue());
+    //atmosphere.render(camera,scene,frameBufferRenderer.getPostProcessShaderQueue());
     //stats.begin()
     frameBufferRenderer.render(renderer,scene,camera);
     //stats.end();

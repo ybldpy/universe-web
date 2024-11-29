@@ -96,6 +96,54 @@ const vs =
         //     EndPrimitive();
         // }
         // `
+
+
+class ClustersBuffer{
+
+
+    constructor(rawData) {
+        this.starNums = 0;
+        this.startBuffer = []
+        this.endBuffer = []
+        this.createBuffers(rawData);
+    }
+    createBuffers(rawData){
+
+        const dataView = new DataView(rawData);
+        // 从子数组中获取第一个整数
+        const numsRecords = dataView.getInt32(0,littleEnd);
+        const elementsInRow = dataView.getInt32(4,littleEnd);
+        const dataPartOffset = 8;
+        const attrNums = 8;
+        this.starNums = numsRecords/elementsInRow;
+        console.log(this.starNums);
+        for(let i = 0;i<this.starNums;i++){
+            let binaryArrOffset = dataPartOffset+i*attrNums*float32Size;
+            this.startBuffer.push(dataView.getFloat32(binaryArrOffset,littleEnd));
+            this.startBuffer.push(dataView.getFloat32(binaryArrOffset+float32Size,littleEnd));
+            this.startBuffer.push(dataView.getFloat32(binaryArrOffset+float32Size*2,littleEnd));
+            this.startBuffer.push(dataView.getFloat32(binaryArrOffset+float32Size*3,littleEnd));
+            binaryArrOffset = binaryArrOffset+float32Size*4;
+            this.endBuffer.push(dataView.getFloat32(binaryArrOffset,littleEnd));
+            this.endBuffer.push(dataView.getFloat32(binaryArrOffset+float32Size,littleEnd));
+            this.endBuffer.push(dataView.getFloat32(binaryArrOffset+float32Size*2,littleEnd));
+            this.endBuffer.push(dataView.getFloat32(binaryArrOffset+float32Size*3,littleEnd));
+        }
+    }
+
+    getStartBuffer(){
+        return this.startBuffer;
+    }
+    getEndBuffer(){
+        return this.endBuffer;
+    }
+
+    getStarCount(){
+        return this.starNums;
+    }
+
+}
+
 export class GlobularEvolution {
     
     
@@ -119,6 +167,10 @@ export class GlobularEvolution {
             },
             glslVersion:THREE.GLSL3
         });
+
+
+        this.points = new THREE.Points(new THREE.BufferGeometry(),this.shader);
+
     }
 
     loadStarTexture(textureUrl){
@@ -133,49 +185,84 @@ export class GlobularEvolution {
 
 
 
-    init(){
-        this.initGL()
-        this.loadColorMap(this.colorMapUrl);
-        this.loadStar(this.starUrl,this.currentIndex);
-        this.loadStarTexture("/data/halo.png");
-    }
 
-    loadStar(starUrl,index){
+    // createBuffer(data){
+    //     const dataView = new DataView(data);
+    //     // 从子数组中获取第一个整数
+    //     const numsRecords = dataView.getInt32(0,littleEnd);
+    //     const elementsInRow = dataView.getInt32(4,littleEnd);
+    //     const dataPartOffset = 8;
+    //     if(this.starNums<=0){
+    //         this.starNums = numsRecords/elementsInRow;
+    //     }
+    //     if(this.starBeginBuffer.length<=0){
+    //         let starBeginBuffer = new Float32Array(this.starNums*this.starAttrNums);
+    //         let starEndBuffer = new Float32Array(this.starNums*this.starAttrNums);
+    //     }
+    //     for(let i = 0;i<this.starNums;i++){
+    //         let bufferOffset = i*this.starAttrNums;
+    //         let binaryArrOffset = dataPartOffset+i*this.starAttrNums*2*float32Size;
+    //         this.starBeginBuffer[bufferOffset] = dataView.getFloat32(binaryArrOffset,littleEnd);
+    //         this.starBeginBuffer[bufferOffset+1] = dataView.getFloat32(binaryArrOffset+float32Size,littleEnd);
+    //         this.starBeginBuffer[bufferOffset+2] = dataView.getFloat32(binaryArrOffset+float32Size*2,littleEnd);
+    //         this.starBeginBuffer[bufferOffset+3] = dataView.getFloat32(binaryArrOffset+float32Size*3,littleEnd);
+    //         binaryArrOffset = binaryArrOffset+float32Size*4;
+    //         this.starEndBuffer[bufferOffset] = dataView.getFloat32(binaryArrOffset,littleEnd);
+    //         this.starEndBuffer[bufferOffset+1] = dataView.getFloat32(binaryArrOffset+float32Size,littleEnd);
+    //         this.starEndBuffer[bufferOffset+2] = dataView.getFloat32(binaryArrOffset+float32Size*2,littleEnd);
+    //         starEndBuffer[bufferOffset+3] = dataView.getFloat32(binaryArrOffset+float32Size*3,littleEnd);
+    //     }
+    //
+    //
+    //
+    //
+    // }
+
+    fetchStarData(starUrl,index,bufferMap){
+        bufferMap[index] = {
+            state:this.BUFFER_STATES.LOADING,
+            buffer:null
+        }
         fetch(starUrl+"/snap_"+index+".bin")
-        .then(response=>response.arrayBuffer())
-        .then(data=>{
-            const dataView = new DataView(data);
-            // 从子数组中获取第一个整数
-            const numsRecords = dataView.getInt32(0,littleEnd);
-            const elementsInRow = dataView.getInt32(4,littleEnd);
-            const dataPartOffset = 8;
-            if(this.starNums<=0){
-                this.starNums = numsRecords/elementsInRow;
-            }
-            if(this.starBeginBuffer.length<=0){
-                this.starBeginBuffer = new Float32Array(this.starNums*this.starAttrNums);
-                this.starEndBuffer = new Float32Array(this.starNums*this.starAttrNums);
-            }
-            for(let i = 0;i<this.starNums;i++){
-                let bufferOffset = i*this.starAttrNums;
-                let binaryArrOffset = dataPartOffset+i*this.starAttrNums*2*float32Size;
-                this.starBeginBuffer[bufferOffset] = dataView.getFloat32(binaryArrOffset,littleEnd);
-                this.starBeginBuffer[bufferOffset+1] = dataView.getFloat32(binaryArrOffset+float32Size,littleEnd);
-                this.starBeginBuffer[bufferOffset+2] = dataView.getFloat32(binaryArrOffset+float32Size*2,littleEnd);
-                this.starBeginBuffer[bufferOffset+3] = dataView.getFloat32(binaryArrOffset+float32Size*3,littleEnd);
-                binaryArrOffset = binaryArrOffset+float32Size*4;
-                this.starEndBuffer[bufferOffset] = dataView.getFloat32(binaryArrOffset,littleEnd);
-                this.starEndBuffer[bufferOffset+1] = dataView.getFloat32(binaryArrOffset+float32Size,littleEnd);
-                this.starEndBuffer[bufferOffset+2] = dataView.getFloat32(binaryArrOffset+float32Size*2,littleEnd);
-                this.starEndBuffer[bufferOffset+3] = dataView.getFloat32(binaryArrOffset+float32Size*3,littleEnd);
-            }
-            
-            this.starDataReady = true;
+        .then(response=>response.arrayBuffer(),(reason)=>{
+            bufferMap[index]["state"] = this.BUFFER_STATES.FAIL
+        })
+        .then(rawData=>{
+            bufferMap[index]["buffer"] = new ClustersBuffer(rawData);
+            bufferMap[index]["state"] = this.BUFFER_STATES.READY;
         })
     }
 
-    
-    
+
+
+    getNextFrameIndex(){
+
+
+        let iteratedItemCount = 0;
+        const queueSize = Object.keys(this.buffers_map).length;
+        for(let i = 1;iteratedItemCount<Math.min(this.loadBatchSize,queueSize);i++){
+            if((this.currentIndex + i) in this.buffers_map) {
+                iteratedItemCount+=1;
+                let bufferState = this.buffers_map[this.currentIndex + i]["state"];
+                if (bufferState === this.BUFFER_STATES.READY || bufferState === this.BUFFER_STATES.LOADING) {
+                    return this.currentIndex + i;
+                }
+            }
+        }
+
+        return Math.min(this.currentIndex + 1,this.maxIndex);
+        // let keys = Object.keys(this.buffers_map);
+        // let smallest = this.currentIndex+1;
+        // keys.forEach((k)=>{
+        //     smallest = Math.min(smallest,parseInt(k));
+        // })
+        // return smallest;
+    }
+
+    downloadStarData(starUrl){
+        // remove buffer in fail state
+
+    }
 
     loadColorMap(colorMapUrl) {
         fetch(colorMapUrl)
@@ -202,45 +289,147 @@ export class GlobularEvolution {
             })
     }
 
-    update(scene,camera,deltaTime){
-        if((this.initState || this.displacement>1)&&this.starDataReady&&this.colorMapReady&&this.starTextureReady){
-            this.initState = false;
-            this.displacement = 0;
-            this.pastTime = 0;
-            this.starDataReady = false;
-            if(this.points==undefined||this.points==null){
-                const bufferGeometry = new THREE.BufferGeometry();
-                bufferGeometry.setAttribute("posAndMass",new THREE.BufferAttribute(this.starBeginBuffer,4));
-                bufferGeometry.setAttribute("nextPosAndMass",new THREE.BufferAttribute(this.starEndBuffer,4));
-                bufferGeometry.setDrawRange(0,this.starNums);
-                this.points = new THREE.Points(bufferGeometry,this.shader);
-                scene.add(this.points);
-            }
-            else {
-                // 将新的数组传进points中
-                const bufferGeometry = this.points.geometry;
-                const posAndMassAttribute = bufferGeometry.getAttribute('posAndMass');
-                posAndMassAttribute.array = this.starBeginBuffer; // 新的数据数组
-                posAndMassAttribute.needsUpdate = true;
 
-                // 更新 nextPosAndMass 属性的数据
-                const nextPosAndMassAttribute = bufferGeometry.getAttribute('nextPosAndMass');
-                nextPosAndMassAttribute.array = this.starEndBuffer; // 新的数据数组
-                nextPosAndMassAttribute.needsUpdate = true;
-            }
-            this.loadStar(this.starUrl,++this.currentIndex);
+
+    loadDataToGPU(clustersBuffer,bufferGeometry){
+        const attribute = bufferGeometry.getAttribute("posAndMass")
+        if (attribute == null || attribute === "") {
+            bufferGeometry.setAttribute("posAndMass", new THREE.BufferAttribute(new Float32Array(clustersBuffer.getStartBuffer()), 4))
+            bufferGeometry.setAttribute("nextPosAndMass", new THREE.BufferAttribute(new Float32Array(clustersBuffer.getEndBuffer()), 4))
+            bufferGeometry.setDrawRange(0, clustersBuffer.getStarCount())
         }
-        if(this.points==undefined||this.points==null){return;}
-        //this.shader.uniforms.kpc.value = 3e2;
-        let t = new THREE.Matrix4();
-        this.pastTime+=deltaTime;
-        // const displacement = this.pastTime / this.standardInterval;
-        this.displacement = this.pastTime / this.standardInterval;
-        this.shader.uniforms.displacement.value = Math.min(this.displacement,1.0);
+        else {
+            // 将新的数组传进points中
+            // const bufferGeometry = this.points.geometry;
+            const posAndMassAttribute = bufferGeometry.getAttribute('posAndMass');
+            posAndMassAttribute.array = new Float32Array(clustersBuffer.getStartBuffer()); // 新的数据数组
+            posAndMassAttribute.needsUpdate = true;
+            // //
+            // // // 更新 nextPosAndMass 属性的数据
+            const nextPosAndMassAttribute = bufferGeometry.getAttribute('nextPosAndMass');
+            nextPosAndMassAttribute.array = new Float32Array(clustersBuffer.getEndBuffer()); // 新的数据数组
+            nextPosAndMassAttribute.needsUpdate = true;
+        }
+    }
+
+    addedToScene(){
+        return this.added;
+    }
+
+
+    updateBufferMap(){
+        Object.keys(this.buffers_map).forEach((key)=>{
+            if(this.buffers_map[key]["state"] == this.BUFFER_STATES.FAIL){
+                delete this.buffers_map[key]
+            }
+        });
+    }
+
+
+    pullFrameData(idx){
+        const buffer = this.buffers_map[idx]["buffer"];
+        delete this.buffers_map[idx];
+        return buffer;
+    }
+
+    isNextFrameDataReady(){
+        let index = this.getNextFrameIndex();
+        return index in this.buffers_map && this.buffers_map[index]["state"] == this.BUFFER_STATES.READY;
+    }
+
+
+    refillDataFetchQueue(){
+        let queueSize = Object.keys(this.buffers_map).length;
+        if(queueSize >=this.loadBatchSize ){return;}
+        let nextIdx = this.getNextFrameIndex();
+
+        for(let i = 0;i+nextIdx < this.maxIndex&&queueSize<this.loadBatchSize;i++){
+            if(!((i+nextIdx) in this.buffers_map)){
+                this.fetchStarData(this.starUrl,i+nextIdx,this.buffers_map);
+                ++queueSize;
+            }
+        }
+    }
+
+    updateTransformationMat(camera){
+        const t = new THREE.Matrix4();
         t.multiplyMatrices(camera.projectionMatrix,t).multiplyMatrices(t,camera.matrixWorldInverse);
         this.shader.uniforms.transformation.value = t;
     }
+    update(scene,camera,deltaTime){
 
+        this.updateBufferMap();
+        this.refillDataFetchQueue();
+        this.updateTransformationMat(camera);
+
+        if(this.nextFrame&&this.colorMapReady&&this.starTextureReady){
+            if(this.isNextFrameDataReady()) {
+                this.nextFrame = false;
+                this.displacement = 0;
+                this.pastTime = 0;
+                let nextIdx = this.getNextFrameIndex();
+                this.currentIndex = nextIdx;
+                this.loadDataToGPU(this.pullFrameData(this.currentIndex), this.points.geometry);
+            }
+            else {
+                return;
+            }
+        }
+
+
+        if(!this.addedToScene()){
+            scene.add(this.points)
+            this.added = true
+        }
+
+
+        //this.shader.uniforms.kpc.value = 3e2;
+        this.pastTime+=deltaTime;
+        //const displacement = this.pastTime / this.standardInterval;
+        this.displacement = this.pastTime / this.getFrameInterval();
+        this.shader.uniforms.displacement.value = Math.min(this.displacement,1.0);
+
+        if (this.displacement>=1){
+            this.nextFrame = true;
+        }
+
+    }
+
+
+
+
+    getMaxIndex(){
+        return this.maxIndex
+    }
+    BUFFER_STATES = {
+        LOADING:0,
+        READY:1,
+        FAIL:2
+    }
+    BUFFER_MAP_STATE = {
+        ACTIVE:0,
+        INACTIVE:1
+    }
+
+
+    reset(){
+        this.buffers_map = {}
+        this.currentIndex = -1;
+        this.nextFrame = true;
+        this.pastTime = 0;
+    }
+
+
+    getCurrentIndex(){
+        return this.currentIndex;
+    }
+    getPastTime(){
+        return this.pastTime;
+    }
+
+    getFrameInterval(){
+        return this.standardInterval;
+    }
 
     constructor(colorMapUrl, starUrl, maxIndex) {
         
@@ -254,16 +443,25 @@ export class GlobularEvolution {
         this.starBeginBuffer = [];
         this.starEndBuffer = [];
         this.starNums = 0;
-        this.starAttrNums = 4;
-        this.starDataReady = false;
-        this.currentIndex = 0;
-        this.initState = true;
+        this.currentIndex = -1;
+        this.nextFrame = true;
         this.textureLoader = new THREE.TextureLoader();
         this.modelMat = new THREE.Matrix4().makeTranslation(new THREE.Vector3(0,0,0));
         this.modelMat.multiplyMatrices(this.modelMat,new THREE.Matrix4().makeScale(1,1,1))
         this.pastTime = 0.0;
-        this.standardInterval = 2 * 1000;
-        this.init();
+        this.standardInterval = 10 * 1000;
+        this.loadBatchSize = 4
+        this.buffers_map = {
+        }
+        this.loadColorMap(this.colorMapUrl);
+        this.loadStarTexture("/data/halo.png");
+
+        this.initGL()
+
+        this.added = false;
+
+
+
     }
 
 

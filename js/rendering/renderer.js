@@ -49,7 +49,7 @@ export class FrameBufferRenderer{
         out vec4 color;
         uniform sampler2D screenColor;
         void main(){
-            color = vec4(texture(screenColor,vUv).rgb,1.0);
+            color = texture(screenColor,vUv);
         }
         `
         this.postShader = new THREE.ShaderMaterial({
@@ -59,6 +59,7 @@ export class FrameBufferRenderer{
             uniforms:{
                 screenColor:{value:null}
             }
+
         });
 
         this.plane = new THREE.Mesh(planeGeo,this.postShader);

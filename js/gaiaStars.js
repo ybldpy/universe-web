@@ -1,6 +1,4 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { Octree } from 'three/examples/jsm/Addons.js';
 export class GaiaStars{
 
 
@@ -48,8 +46,15 @@ export class GaiaStars{
     
     `
 
-    constructor(dataUrl,scene){
-        this.loadStars(dataUrl,true);
+
+
+    DATA_SOURCE_FORMAT = {
+        BINARY:"BINARY",
+        SPECK:"SPECK"
+    }
+
+    constructor(dataUrl,scene,format){
+        this.loadStars(dataUrl,format);
         this.scene = scene;    
         this.positions = [];
         this.starDataReady = false;
@@ -74,19 +79,15 @@ export class GaiaStars{
     }
 
     loadStarSpeckFormat(data){
-        const lines = data.split("\n");
-        let dataOffset = 0;
-        
-        while(lines[dataOffset]!="\r"){
-            dataOffset++;
-        }
-        dataOffset+=1;
-        for(let i=0;dataOffset+i<lines.length/10&&lines[dataOffset+i]!="\r";i+=2){
-            const rows = lines[dataOffset+i].split(" ");
-            for(let u=0;u<3;u++){
-                this.positions.push(parseFloat(rows[u])*3e19);
-            }
-        }
+        const lines = data.trim().split("\n");
+        const regex = /^\D/
+        lines.forEach((row)=>{
+            row = row.trim()
+            if(row.startsWith("#")){return;}
+            if (!regex.test(row)){return;}
+            const cols = row.split(/s+/)
+            this.positions.push(parseFloat(cols[0]),parseFloat(cols[1]),parseFloat(cols[2]))
+        })
     }
 
     loadStarBinaryFormat(data){
@@ -108,16 +109,19 @@ export class GaiaStars{
 
 
     
-    async loadStars(dataUrl,isBinaryFormat){
+    async loadStars(dataUrl,format){
 
         const responsePromise = fetch(dataUrl);
         const textureLoadPromise = new THREE.TextureLoader().loadAsync("/data/halo.png")
         const response = await responsePromise
-        if(isBinaryFormat){
+        if(this.DATA_SOURCE_FORMAT.BINARY === format){
             this.loadStarBinaryFormat(await response.arrayBuffer());
         }
-        else {
+        else if (this.DATA_SOURCE_FORMAT.SPECK===format){
             this.loadStarSpeckFormat(await response.text());
+        }
+        else {
+            return
         }
         this.starDataReady = true;
         const geometry = new THREE.BufferGeometry();
@@ -131,20 +135,4 @@ export class GaiaStars{
     }
 }
 
-
-
-
-
-// class Octree{
-
-// }
-// class OctreeNode{
-//     constructor(capacity,center,size,){
-//         this.capacity = capacity
-//         this.center = center;
-//         this.size = size;
-//         this.children = []
-//     }
-
-// }
 

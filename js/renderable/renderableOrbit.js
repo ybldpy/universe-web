@@ -1,7 +1,6 @@
 import * as THREE from "three"
 import {RenderableObject,RenderData,UpdateData} from "../rendering/base";
 import {GLSL3, ShaderMaterial} from "three";
-import {difference} from "three/nodes";
 import {appContext} from "../applicationContext";
 
 
@@ -57,7 +56,6 @@ export class RenderableOrbit extends RenderableObject{
         this.orbitNode = appContext.scene.findNodeByIdentifier(orbitTarget);
         this.orbitColor = orbitColor;
         this.init = true;
-        this.radius = 1.5e5;
         const points = [];
         for (let i = 0; i <= RenderableOrbit.orbitSegments; i++) {
             const theta = (i / RenderableOrbit.orbitSegments) * Math.PI * 2;
@@ -92,7 +90,7 @@ export class RenderableOrbit extends RenderableObject{
 
     update(updateData) {
         this.orbitRing.material.uniforms.orbitColor.value = (this.convertColorToRGB(this.orbitColor));
-        this.orbitRing.material.uniforms.radius.value = appContext.scene.findNodeByIdentifier("earth").getWorldPosition()
+        this.orbitRing.material.uniforms.radius.value = this.orbitNode.getWorldPosition()
             .clone().sub(updateData.transformation.translation).length();
     }
 

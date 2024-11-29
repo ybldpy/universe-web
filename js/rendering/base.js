@@ -33,6 +33,11 @@ export class RenderData{
 }
 export class RenderableObject{
     constructor(){}
+
+
+
+    addUIComponent(uiComponent){}
+
     update(updateData){}
     render(renderData){}
 }

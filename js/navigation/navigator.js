@@ -28,7 +28,6 @@ export class Navigator{
         this.orbitNavigator = new OrbitNavigator();
         this.pathNavigator = new PathNavigator();
         this.interactionHandler = interactionHandler;
-
     }
     update(deltaTime){
         this.interactionHandler.updateState(deltaTime);

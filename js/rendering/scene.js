@@ -5,7 +5,7 @@ import {appContext} from "../applicationContext";
 
 
 export class SceneGraphNode{
-    constructor({reachRadius = 10,identifier = "", transformation = new Transformation(), parentNode = null, renderableObject = null} = {}){
+    constructor({reachRadius = 10,identifier = "", transformation = new Transformation(), parentNode = null, renderableObject = null}){
         this.identifier = identifier;
         this.parentNode = parentNode;
         this.childrenNodes = [];
@@ -19,6 +19,17 @@ export class SceneGraphNode{
         this.modelTransformionCached = new THREE.Matrix4();
         this.localPosition = new THREE.Vector3();
     }
+
+
+
+    addUIComponent(uiComponent){
+        this.ui = uiComponent
+        if (this.renderableObject!=null){
+            const childUI = this.ui.addFolder("renderableObject")
+            this.renderableObject.addUIComponent(childUI)
+        }
+    }
+
 
     getReachRadius(){
         return this.reachRadius;

@@ -1,5 +1,6 @@
 export const appContext = {
     "camera":null,
     "scene":null,
-    "navigator":null
+    "navigator":null,
+    "gui":null
 };

@@ -1,16 +1,7 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { clamp } from 'three/src/math/mathutils';
-import { Timer } from 'three/addons/misc/Timer.js';
-import * as dat from 'dat.gui';
-// import * as Lerc from 'lerc';
-import { EffectComposer } from 'three/examples/jsm/Addons.js';
-import {rotate, texture} from 'three/examples/jsm/nodes/Nodes.js';
-// import { GaiaStars } from './gaiaStars';
-import { Image } from "image-js"
-import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { RenderableObject } from './rendering/base';
-import {Matrix4} from "three";
+import {clamp} from 'three/src/math/mathutils';
+import {Image} from "image-js"
+import {RenderableObject} from './rendering/base';
 
 const utils = {
     clamp:function(value,min,max){
@@ -58,20 +49,30 @@ class TileIndex{
 
     nextLevelIndex(ns,we){
         const level = this.level+1;
-        const x2 = this.x*2;
-        const y2 = this.y*2;
-        if(ns == TileIndex.DIRECTION.NORTH){
-            if(we == TileIndex.DIRECTION.WEST){
-                return new TileIndex(level,x2,y2);
-            }
-            else {
-                return new TileIndex(level,x2+1,y2);
-            }
+        let x2 = this.x*2;
+        let y2 = this.y*2;
+
+        if (ns == TileIndex.DIRECTION.SOUTH){
+            y2+=1
         }
-        else {
-            if(we == TileIndex.DIRECTION.WEST){return new TileIndex(level,x2,y2+1)}
-            else {return new TileIndex(level,x2+1,y2+1);}
+        if (we == TileIndex.DIRECTION.EAST){
+            x2+=1;
         }
+
+        return new TileIndex(level,x2,y2)
+
+        // if(ns == TileIndex.DIRECTION.NORTH){
+        //     if(we == TileIndex.DIRECTION.WEST){
+        //         return new TileIndex(level,x2,y2);
+        //     }
+        //     else {
+        //         return new TileIndex(level,x2+1,y2);
+        //     }
+        // }
+        // else {
+        //     if(we == TileIndex.DIRECTION.WEST){return new TileIndex(level,x2,y2+1)}
+        //     else {return new TileIndex(level,x2+1,y2+1);}
+        // }
     }
 
     positionRelativeToParent(){
@@ -104,6 +105,7 @@ class Tile{
     dispose(){
         if(this.status == Tile.available){
             this.texture.dispose()
+            this.uploaded = false
         }
     }
 }
@@ -144,8 +146,8 @@ class TileProvider{
         this.tiles.forEach((key,value)=>{
             for(let x=0;x<value.length;x++){
                 for(let y=0;y<value.length;y++){
-                    if(value[x][y]!=null){
-                        value[x][y].dispose()
+                    if(value[y][x]!=null){
+                        value[y][x].dispose()
                     }
                 }
             }
@@ -157,7 +159,7 @@ class TileProvider{
     
     isTileAvailable(tileIndex){
         if(!this.isWithinRange(tileIndex)){return false;}
-        const tile = this.tiles.get(tileIndex.level)[tileIndex.x][tileIndex.y];
+        const tile = this.tiles.get(tileIndex.level)[tileIndex.y][tileIndex.x];
         return tile!=null && tile.status == Tile.STATUS.available;
     }
     isWithinRange(tileIndex){
@@ -167,11 +169,21 @@ class TileProvider{
     }
 
 
+    initializeTile(tileIndex){
+        let tile = this.tiles.get(tileIndex.level)[tileIndex.y][tileIndex.x];
+        if(tile==null){
+            tile = new Tile(null);
+            this.tiles.get(tileIndex.level)[tileIndex.y][tileIndex.x] = tile;
+        }
+
+
+    }
+
     getTile(tileIndex){
         if(!this.isWithinRange(tileIndex)){
             return this.unavailableTile;
         }
-        const tile = this.tiles.get(tileIndex.level)[tileIndex.x][tileIndex.y];
+        const tile = this.tiles.get(tileIndex.level)[tileIndex.y][tileIndex.x];
         const isnullOrUndef = tile==null;
         if(!isnullOrUndef&&tile.status==Tile.STATUS.downloading){return this.unavailableTile;}
         else if(!isnullOrUndef&&tile.status == Tile.STATUS.available){return tile;}
@@ -193,13 +205,9 @@ class TileProvider{
     }
     downloadTile(requestUrl,tileIndex){
         
-        let tile = this.tiles.get(tileIndex.level)[tileIndex.x][tileIndex.y];
-        if(tile==null){
-            tile = new Tile(null);
-            this.tiles.get(tileIndex.level)[tileIndex.x][tileIndex.y] = tile;
-        }
+        this.initializeTile(tileIndex);
+        const tile = this.tiles.get(tileIndex.level)[tileIndex.y][tileIndex.x]
         tile.status = Tile.STATUS.downloading;
-
         this.textureLoader.load(requestUrl,onload = (texture)=>{
             // texture.wrapS = THREE.ClampToEdgeWrapping;
             // texture.wrapT = THREE.ClampToEdgeWrapping;
@@ -226,42 +234,106 @@ class HeightTileProvider extends TileProvider{
 
 
     downloadTile(requestUrl,tileIndex){
-        let tile = this.tiles.get(tileIndex.level)[tileIndex.x][tileIndex.y];
-        if(tile==null){
-            tile = new Tile(null);
-            this.tiles.get(tileIndex.level)[tileIndex.x][tileIndex.y] = tile;
-        }
+
+
+
+
+        // if (true){
+        //     super.downloadTile(requestUrl,tileIndex);
+        //     return;
+        // }
+
+        this.initializeTile(tileIndex);
+        const tile = this.tiles.get(tileIndex.level)[tileIndex.y][tileIndex.x]
         tile.status = Tile.STATUS.downloading;
+
+
+        // if (true){
+        //     this.textureLoader.load(requestUrl,onload = (texture)=>{
+        //             // texture.wrapS = THREE.ClampToEdgeWrapping;
+        //             // texture.wrapT = THREE.ClampToEdgeWrapping;
+        //             this.currentMaxLevel = Math.max(tileIndex.level,this.currentMaxLevel);
+        //             tile.texture = texture;
+        //
+        //             tile.status = Tile.STATUS.available;
+        //         },
+        //         onerror = (e)=>{
+        //             this.enqueueRetryDownload(tile);
+        //         })
+        //     return;
+        // }
+
         Image.load(requestUrl).then((image)=>{
-            if(image.channels!=1){
-                return;
-            }
+
             //let dataView = new DataView(image.data.buffer);
-            let type = THREE.UnsignedByteType;
             // let heightBuffer = image.data;
-            let heightBuffer = new Float32Array(image.data.length);
-            if(image.bitDepth==16){
-                const signedShortBuffer = new Int16Array(image.data.buffer);
-                //const float32Buffer = new Float32Array(heightBuffer.length);
-                for(let i=0;i<heightBuffer.length;i++){
-                    heightBuffer[i] = signedShortBuffer[i];
-                }
-                type = THREE.FloatType;
+            let heightBuffer = null;
+            let typedBuffer = null;
+
+            //console.log(image.getPixelsArray());
+            if (image.bitDepth == 8){
+                typedBuffer = new Uint8Array(image.data.buffer)
+
+            }
+            else if(image.bitDepth==16){
+                typedBuffer = new Int16Array(image.data.buffer);
             }
             else if(image.bitDepth==32){
-                heightBuffer = image.data;
-                type = THREE.FloatType; 
+                typedBuffer = new Float32Array(image.data.buffer);
             }
+
+            heightBuffer = new Float32Array(typedBuffer.length);
+            let minValue = 0;
+            let maxValue = 0;
+            typedBuffer.forEach((v,i)=>{heightBuffer[i] = v;maxValue = Math.max(maxValue,v);});
+            console.log(heightBuffer)
             tile.maxPixelValue = image.maxValue;
-            const dataTexture = new THREE.DataTexture(heightBuffer,image.width,image.height,THREE.RedFormat,type);
-            tile.texture = dataTexture;
-            texture.magFilter = THREE.NearestFilter;
-            texture.minFilter = THREE.NearestFilter;
-            texture.generateMipmaps = true;
-            
+            tile.minPixelValue = minValue;
+            tile.texture = new THREE.DataTexture(heightBuffer, image.width, image.height, THREE.RedFormat, THREE.FloatType,THREE.UVMapping,
+                THREE.ClampToEdgeWrapping,THREE.ClampToEdgeWrapping,
+                THREE.LinearFilter,THREE.LinearFilter);
+            //tile.texture.isDataTexture = false;
             tile.status = Tile.STATUS.available;
+            tile.uploadTextureToGPU();
+            tile.texture.generateMipmaps = false;
             this.currentMaxLevel = Math.max(tileIndex.level,this.currentMaxLevel);
         },(e)=>{this.enqueueRetryDownload(tile)})
+    }
+
+}
+
+class SingleImageTileProvider extends TileProvider{
+
+
+    constructor(imageUrl){
+        super(imageUrl,0);
+        this.tile = new Tile(null,Tile.STATUS.downloading);
+        this.downloadTile(imageUrl,null);
+    }
+
+    isTileAvailable(tileIndex){
+        return tileIndex.level==0&&tileIndex.x==0&&tileIndex.y==0;
+    }
+    getCurrentMaxLevel(){
+        return 0;
+    }
+    downloadTile(requestUrl,tileIndex){
+        this.tile.status = Tile.STATUS.downloading;
+        this.textureLoader.loadAsync(requestUrl).then((texture)=>{
+            // texture.wrapS = THREE.ClampToEdgeWrapping;
+            // texture.wrapT = THREE.ClampToEdgeWrapping;
+            this.tile.texture = texture;
+            this.tile.status = Tile.STATUS.available;
+        },(error)=>{this.tile.status = Tile.STATUS.unavailable;});
+    }
+    getTile(tileIndex){
+        // if(tileIndex.level!=0){
+        //     return new Tile(null,Tile.STATUS.unavailable);
+        // }
+        if(this.tile.status==Tile.STATUS.unavailable){
+            this.downloadTile(this.requestUrlFormat,null);
+        }
+        return this.tile;
     }
 
 }
@@ -278,8 +350,7 @@ class Layer{
         this.type = type;
     }
     getTile(tileIndex){
-        const tile = this.tileProvider.getTile(tileIndex);
-        return tile;
+        return this.tileProvider.getTile(tileIndex);
     }
     getCurrentMaxLevel(){
         return this.tileProvider.getCurrentMaxLevel();
@@ -288,7 +359,10 @@ class Layer{
         return this.tileProvider.isTileAvailable(tileIndex);
     }
     dispose(tileIndex){
-        this.getTile(tileIndex).dispose();
+        const tile = this.getTile(tileIndex);
+        if (tile!==undefined && tile!==null){
+            tile.dispose();
+        }
     }
     //the clost tile is self
     findClostAvailableTile(tileIndex){
@@ -343,6 +417,21 @@ class Grid{
         return (xSegements+1)*(ySegements+1);
     }
 
+
+    getBufferGeometry(){
+        return this.bufferGeometry;
+    }
+
+    createBufferGeometry(){
+        const bufferGeometry = new THREE.BufferGeometry()
+        bufferGeometry.setAttribute("in_uv",new THREE.BufferAttribute(this.textures,2));
+        bufferGeometry.setIndex(this.elements);
+        return bufferGeometry;
+    }
+
+
+
+
     createTextureCoordinates(xSegements,ySegements){
         let textureCoordinates = new Array(this.numVertices(xSegements+2,ySegements+2));
         let index = 0;
@@ -364,31 +453,9 @@ class Grid{
             this.textures[idx++]=texturesCoordinates[i].x;
             this.textures[idx++]=texturesCoordinates[i].y;
         }
-        // this.vao = gl.createVertexArray();
-        // gl.bindVertexArray(vao);
-        // this.vbo = gl.createBuffer();
-        // gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-        // gl.bufferData(gl.ARRAY_BUFFER, this.textures, gl.STATIC_DRAW);
-        // const coordinates = 0; // 假设位置属性的位置是 0
-        // gl.vertexAttribPointer(coordinates, 2, gl.FLOAT, false, 0, 0);
-        // gl.enableVertexAttribArray(coordinates);
-        // this.ebo = gl.createBuffer();
-        // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo);
-        // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.elements, gl.STATIC_DRAW);
-        // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,null);
-        // gl.bindBuffer(gl.ARRAY_BUFFER, null);
-        // gl.bindVertexArray(null);
+        this.bufferGeometry = this.createBufferGeometry();
 
     }
-
-
-    draw(gl){
-        gl.bindVertexArray(this.vao);
-        gl.drawElements(gl.TRIANGLES, this.elements.length, gl.UNSIGNED_SHORT, 0);
-        gl.bindVertexArray(null);
-    }
-
-
 
 }
 class TilePile{
@@ -504,6 +571,7 @@ export class RenderablePlanet extends RenderableObject{
     out vec4 vsPosition;
     out float depth;
     out vec4 posCamSpace;
+    out float vHeight;
     
     
     #ifndef LAYER
@@ -524,8 +592,9 @@ export class RenderablePlanet extends RenderableObject{
     uniform float radius;
     uniform vec2 minLatLon;
     uniform vec2 lonLatScalingFactor;
-    uniform float multiplier;
+    uniform float heightMultiplier;
     uniform float minHeight;
+    uniform float heightOffset;
     uniform Layer heightLayer;
     uniform mat4 modelTransform;
     
@@ -547,10 +616,13 @@ export class RenderablePlanet extends RenderableObject{
             vec2 hOffset = vec2(0.0,0.5)*heightLayer.uvTransform.scale;
             // hUv+=widthOffset;
             // hUv+=hOffset;
-            float h = (texture(heightLayer.tile,vec2(hUv.x,hUv.y)).r);
-            h*=multiplier;
+            float h = texture(heightLayer.tile,vec2(hUv.x,hUv.y)).x;
+            vHeight = h;
+            h*=heightMultiplier;
+            h+=heightOffset;
             if(uv.x<0.0||uv.x>1.0||uv.y<0.0||uv.y>1.0){
-                h = h - min(radius, lonLatScalingFactor.y/2.0*1000000.0);
+                // h = h - min(radius, lonLatScalingFactor.y/2.0*1000000.0);
+                h = minHeight;
             }
             // else {
             //     // h+=600.0;
@@ -580,6 +652,7 @@ export class RenderablePlanet extends RenderableObject{
     in vec2 out_uv;
     in vec4 vsPosition;
     in vec4 posCamSpace;
+    in float vHeight;
     #ifndef LAYER
     #define LAYER
     struct UVTransform{
@@ -625,32 +698,42 @@ export class RenderablePlanet extends RenderableObject{
 
     uniform Layer colorLayer;
     uniform bool chunkEdge;
+    uniform vec4 childIndexColor;
+    uniform bool childIndexRenderEnabled;
     void main(){
         //gl_FragDepth = LinearizeDepth(-vsPosition.w);
         gl_FragDepth = log(1.0*vsPosition.z+1.0)/ log(1.0 * 1e20 +1.0);
         //gl_FragDepth = (vsPosition.z - 0.1) / (1e20-0.1);
-        fragColor = vec4(texture(colorLayer.tile,colorLayer.uvTransform.uvOffset + colorLayer.uvTransform.scale*out_uv).rgb,1.0);
+        // vec4 color = vec4(texture(colorLayer.tile,colorLayer.uvTransform.uvOffset + colorLayer.uvTransform.scale*out_uv).rgb,1.0);
+        vec4 color = vec4(vHeight,vHeight,vHeight,1.0);
         gPosition = vec4(posCamSpace.xyz,0.0);
-        if(isBorder(out_uv)&&chunkEdge){
-            fragColor = vec4(1.0,0.0,0.0,1.0);
+        if(chunkEdge&&isBorder(out_uv)){
+            color = vec4(1.0,0.0,0.0,1.0);
         }
+        // if(childIndexRenderEnabled){
+        //
+        //     color = mix(color,childIndexColor,0.5);
+        // }
+        
         // col = vec4(1.0,0.0,0.0,1.0);
-        //fragColor = vec4(1.0,0.0,0.0,1.0);
+        fragColor = color;
     }
     `
 
 
     static X_SEGMENTS= 64;
     static Y_SEGMENTS = 64;
+    static RENDER_GRID = new Grid(RenderablePlanet.X_SEGMENTS,RenderablePlanet.Y_SEGMENTS)
 
 
     static DEFAULT_MAX_LEVEL = 13;
-    static DEFAULT_MIN_LEVEL = 2;
+    static DEFAULT_MIN_LEVEL = 1;
     constructor(params = {radius:10,layers:[]}){
         super();
+
         this.radius = params.radius;
         this.root = new Chunk(-90,90,-180,180,new TileIndex(0,0,0));
-        this.grid = new Grid(RenderablePlanet.X_SEGMENTS,RenderablePlanet.Y_SEGMENTS);
+        this.grid = RenderablePlanet.RENDER_GRID;
         this.maxLevel = RenderablePlanet.DEFAULT_MAX_LEVEL;
         this.minLevel = RenderablePlanet.DEFAULT_MIN_LEVEL;
         this.position = new THREE.Vector3();
@@ -660,10 +743,12 @@ export class RenderablePlanet extends RenderableObject{
         this.modelTransformCached.multiply(this.rotation);
         this.level0Threshold = this.radius + 1.5 * this.radius;
         this.translation = new THREE.Matrix4();
+        this.heightMultiplier = 1;
         //this.colorTileProvider = new TileProvider("https://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",this.maxLevel)
         //this.setTileProvider("https://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",this.maxLevel,scene)
         this.initLayers();
         params.layers.forEach(layer=>this.addLayer(layer));
+        this.initProps();
     }
     initLayers(){
         let defaultTileProvider = new TileProvider("",this.maxLevel);
@@ -671,17 +756,30 @@ export class RenderablePlanet extends RenderableObject{
         this.heightLayer = new Layer(defaultTileProvider,Layer.TYPE.HEIGHT);
     }
 
+
+    initProps(){
+
+        this.props = {
+            heightMultiplier:this.heightMultiplier,
+            chunkEdge:false,
+            heightOffset:0
+        }
+    }
+
     createGlobalShaderUniformStructure(){
         return {
-            chunkEdge:{value:true},
+            chunkEdge:{value:false},
             radius:{value:1.0},
             minLatLon:{value:null},
             lonLatScalingFactor:{value:null},
-            multiplier:{value:1000},
+            heightMultiplier:{value:1},
             minHeight:{value:0},
+            childIndexRenderEnabled:{value:true},
+            childIndexColor:{value:new THREE.Vector4()},
+            heightOffset:{value:0},
             colorLayer:{
                 value:{
-                    tile:new THREE.Texture(),
+                    tile:null,
                     uvTransform:{
                         uvOffset:new THREE.Vector2(0,0),
                         scale:1.0
@@ -690,7 +788,7 @@ export class RenderablePlanet extends RenderableObject{
             },
             heightLayer:{
                 value:{
-                    tile:new THREE.Texture(),
+                    tile:null,
                     uvTransform:{
                         uvOffset:new THREE.Vector2(0,0),
                         scale:1.0
@@ -699,6 +797,15 @@ export class RenderablePlanet extends RenderableObject{
             },
             modelTransform:{value:new THREE.Matrix4()}
         }
+    }
+
+
+
+    addUIComponent(uiComponent) {
+        const layersUI = uiComponent.addFolder("layers")
+        layersUI.add(this.props,"heightMultiplier",1,100000,2)
+        uiComponent.add(this.props,"chunkEdge",false)
+        uiComponent.add(this.props,"heightOffset",-1000000,1000000,1)
     }
 
     getGlobalShader(){
@@ -719,7 +826,16 @@ export class RenderablePlanet extends RenderableObject{
             this.colorLayer = new Layer(new TileProvider(layer.requestUrlFormat,maxLevel),Layer.TYPE.COLOR);
         }
         else if (Layer.TYPE.HEIGHT.toLowerCase() === type){
-            this.heightLayer = new Layer(new HeightTileProvider(layer.requestUrlFormat,maxLevel),Layer.TYPE.HEIGHT);
+            if (layer.heightMultiplier!==undefined){
+                this.heightMultiplier = layer.heightMultiplier;
+            }
+            if (maxLevel <= 0){
+                this.heightLayer = new Layer(new SingleImageTileProvider(layer.requestUrlFormat),Layer.TYPE.HEIGHT);
+            }
+            else {
+                this.heightLayer = new Layer(new HeightTileProvider(layer.requestUrlFormat,maxLevel),Layer.TYPE.HEIGHT);
+            }
+
         }
         
     }
@@ -734,6 +850,7 @@ export class RenderablePlanet extends RenderableObject{
         this.scaling = updateData.transformation.scaling;
         const translationMat = new THREE.Matrix4().makeTranslation(this.position.x,this.position.y,this.position.z);
         const scalingMat = new THREE.Matrix4().makeScale(this.scaling.x,this.scaling.y,this.scaling.z);
+        this.heightMultiplier = this.props.heightMultiplier
         //this.modelTransformCached = new THREE.Matrix4().multiply(translationMat).multiply(scalingMat).multiply(this.rotation);
     }
     XYZToLonLat(posVec3ModelSpace){
@@ -852,13 +969,13 @@ export class RenderablePlanet extends RenderableObject{
     }
 
     canChunkSplit(tileIndex,layer){
-        let canSplit = false;
+
         const childTile00 = layer.getTile(tileIndex.nextLevelIndex(TileIndex.DIRECTION.NORTH,TileIndex.DIRECTION.WEST));
-        const childTile10 = layer.getTile(tileIndex.nextLevelIndex(TileIndex.DIRECTION.NORTH,TileIndex.DIRECTION.EAST));
-        const childTile01 = layer.getTile(tileIndex.nextLevelIndex(TileIndex.DIRECTION.SOUTH,TileIndex.DIRECTION.WEST));
+        const childTile01 = layer.getTile(tileIndex.nextLevelIndex(TileIndex.DIRECTION.NORTH,TileIndex.DIRECTION.EAST));
+        const childTile10 = layer.getTile(tileIndex.nextLevelIndex(TileIndex.DIRECTION.SOUTH,TileIndex.DIRECTION.WEST));
         const childTile11 = layer.getTile(tileIndex.nextLevelIndex(TileIndex.DIRECTION.SOUTH,TileIndex.DIRECTION.EAST));
         const tileAvailableState = Tile.STATUS.available;
-        canSplit = canSplit || childTile00.status==tileAvailableState || childTile10.status == tileAvailableState || childTile01.status == tileAvailableState || childTile11.status == tileAvailableState;
+        const canSplit = childTile00.status==tileAvailableState || childTile10.status == tileAvailableState || childTile01.status == tileAvailableState || childTile11.status == tileAvailableState;
         return canSplit;
     }
     updateChunk(chunk,renderData){
@@ -870,18 +987,19 @@ export class RenderablePlanet extends RenderableObject{
         }
         const dl = this.calDesiredLevel(chunk,renderData);
         const tileAvailable = this.colorLayer.getTile(chunk.tileIndex).status == Tile.STATUS.available || this.heightLayer.getTile(chunk.tileIndex).status == Tile.STATUS.available;
+        //const tileAvailable = this.colorLayer.getTile(chunk.tileIndex).status == Tile.STATUS.available;
         if(chunk.tileIndex.level < dl && chunk.isLeaf()){
             if(false&&!tileAvailable){chunk.status = Chunk.STATUS.doNothing;}
             else {
                 const tileIndex = chunk.tileIndex;
                 chunk.status = (this.canChunkSplit(tileIndex,this.colorLayer)||this.canChunkSplit(tileIndex,this.heightLayer))?Chunk.STATUS.wantSplit:Chunk.STATUS.doNothing;
+                //chunk.status = (this.canChunkSplit(tileIndex,this.colorLayer))?Chunk.STATUS.wantSplit:Chunk.STATUS.doNothing;
             }
         }
         else if(chunk.tileIndex.level > dl && chunk.isLeaf()){
             chunk.status = Chunk.STATUS.wantMerge;
         }
         else {
-
             chunk.status = Chunk.STATUS.doNothing;
         }
 
@@ -890,8 +1008,9 @@ export class RenderablePlanet extends RenderableObject{
         this.updateChunk(chunk,renderData);
         if(chunk.status == Chunk.STATUS.wantSplit){
             this.splitChunk(chunk);
+            //chunk.surface.visible = false;
         }
-        if(!chunk.isLeaf()){
+        else if(!chunk.isLeaf()){
             let allChildrenWantMerge = true;
             for(let i=0;i<4;i++){
                 this.updateChunkTree(chunk.children[i],renderData);
@@ -899,7 +1018,9 @@ export class RenderablePlanet extends RenderableObject{
             }
             if(allChildrenWantMerge){
                 this.mergeChunk(chunk,renderData.scene);
+                this.updateChunk(chunk,renderData);
             }
+
         }
 
         // if(chunk.isLeaf()){
@@ -1009,7 +1130,8 @@ export class RenderablePlanet extends RenderableObject{
     disposeChunk(chunk,scene){
         if(chunk.surface!=null){
             scene.remove(chunk.surface);
-            chunk.surface.geometry.dispose();
+            this.heightLayer.dispose(chunk.tileIndex)
+            this.colorLayer.dispose(chunk.tileIndex)
             chunk.surface = null;
         }
     }
@@ -1029,33 +1151,40 @@ export class RenderablePlanet extends RenderableObject{
         }
     }
 
+
+
+
     setLayerUniforms(layer,chunk,uniforms,uniformName){
         const tileIndexCopied = new TileIndex(chunk.tileIndex.level,chunk.tileIndex.x,chunk.tileIndex.y);
-        //console.log(tileIndexCopied);
         const {tile,uvTransform} = layer.findClostAvailableTile(tileIndexCopied);
         uniforms[uniformName].value.tile = tile.texture;
-        tile.uploadTextureToGPU();
+        //tile.uploadTextureToGPU();
         uniforms[uniformName].value.uvTransform.uvOffset = uvTransform[0];
         uniforms[uniformName].value.uvTransform.scale = uvTransform[1];
 
-        // if(tile.texture!=null){
-        //     tile.texture.wrapS = THREE.ClampToEdgeWrapping;
-        //     tile.texture.wrapT = THREE.ClampToEdgeWrapping;
-        // }
+        if(tile.texture!=null){
+            tile.texture.wrapS = THREE.ClampToEdgeWrapping;
+            tile.texture.wrapT = THREE.ClampToEdgeWrapping;
+        }
         if(layer.type == Layer.TYPE.HEIGHT){
             uniforms.minHeight.value = tile.minPixelValue;
+
         }
 
     }
 
     setUniforms(chunk,renderData,i){
         const uniforms = chunk.surface.material.uniforms;
-
         //uniforms.multiplier.value = ui.multiplier;
         //uniforms.chunkEdge.value = ui.chunkEdge;
         uniforms.modelTransform.value = renderData.modelTransform;
-        this.setLayerUniforms(this.colorLayer,chunk,uniforms,"colorLayer");
+        uniforms.chunkEdge.value = this.props.chunkEdge;
+
+
+
         this.setLayerUniforms(this.heightLayer,chunk,uniforms,"heightLayer");
+        this.setLayerUniforms(this.colorLayer,chunk,uniforms,"colorLayer");
+
         if(false && chunk.tileIndex.level > 7){
             // const p00 = this.latLonToXYZ(chunk.getMaxLatInRadian(),chunk.getMinLonInRadian(),this.radius).applyMatrix4(camera.matrixWorldInverse.clone().multiply(this.getModelTransform()));
             // const p10 = this.latLonToXYZ(chunk.getMaxLatInRadian(),chunk.getMaxLonInRadian(),this.radius).applyMatrix4(camera.matrixWorldInverse.clone().multiply(this.getModelTransform()));
@@ -1069,9 +1198,28 @@ export class RenderablePlanet extends RenderableObject{
             // uniforms.patchNormalCameraSpace.value.copy(normal);
         }
         else {
+            uniforms.heightOffset.value = this.props.heightOffset
             uniforms.radius.value = this.radius;
             uniforms.minLatLon.value = uniforms.minLatLon.value==null?new THREE.Vector2(chunk.getMinLatInRadian(),chunk.getMinLonInRadian()):uniforms.minLatLon.value.set(chunk.getMinLatInRadian(),chunk.getMinLonInRadian());
             uniforms.lonLatScalingFactor.value = uniforms.lonLatScalingFactor.value==null?new THREE.Vector2(chunk.getMaxLonInRadian()-chunk.getMinLonInRadian(),chunk.getMaxLatInRadian()-chunk.getMinLatInRadian()):uniforms.lonLatScalingFactor.value.set(chunk.getMaxLonInRadian()-chunk.getMinLonInRadian(),chunk.getMaxLatInRadian()-chunk.getMinLatInRadian());
+            uniforms.heightMultiplier.value = this.heightMultiplier;
+            const idxColor = new THREE.Vector4(1.0,0,0,1);
+            if (chunk.tileIndex.y%2 == 1){
+                if (chunk.tileIndex.x%2==0){
+                    idxColor.x = 0;
+                    idxColor.y = 1
+                }
+                else {
+                    idxColor.x = 0;
+                    idxColor.z = 1
+                }
+            }
+            else if (chunk.tileIndex.x%2==1){
+                idxColor.x = 0.5;
+                idxColor.z = 0.8
+                idxColor.y = 0.65
+            }
+            uniforms.childIndexColor.value.copy(idxColor);
         }
         // uniforms.colorTilePile.value.tileLastLevel.texture = chunk.tilePile.tileLastLevel.texture;
         // uniforms.colorTilePile.value.tileLastLevel.uvTransform.uvOffset = chunk.tilePile.tileLastLevelUVTransform[0];
@@ -1083,10 +1231,8 @@ export class RenderablePlanet extends RenderableObject{
     }
 
     createSurface(chunk){
-        const bufferGeometry = new THREE.BufferGeometry();
-        bufferGeometry.setAttribute("in_uv",new THREE.BufferAttribute(this.grid.textures,2));
-        bufferGeometry.setIndex(this.grid.elements);
-        const mesh = new THREE.Mesh(bufferGeometry,chunk.tileIndex.level>7&&false?this.getLocalShader():this.getGlobalShader());
+
+        const mesh = new THREE.Mesh(this.grid.getBufferGeometry(),this.getGlobalShader());
         mesh.frustumCulled = false;
 
         return mesh;
@@ -1115,8 +1261,10 @@ export class RenderablePlanet extends RenderableObject{
         //const dl = this.calDesiredLevel(camera);
         // this.updateChunkTree(this.leftRoot,camera,scene);
         // this.updateChunkTree(this.rightRoot,camera,scene);
-
     }
+
+
+
     render(renderData){
         this.updateChunkTree(this.root,renderData);
         const renderedChunkList = [];
