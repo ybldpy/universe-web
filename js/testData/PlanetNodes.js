@@ -71,7 +71,7 @@ export const planets = [
                 {
                     type:"height",
                     maxLevel: 5,
-                    requestUrlFormat: "http://localhost:8001/{z}/{y}/{x}.tif",
+                    requestUrlFormat: "http://localhost:8001/height2/built/{z}/{y}/{x}.tif",
                     // requestUrlFormat: "/data/t.jpg",
                     heightMultiplier:20
                 }
@@ -101,7 +101,7 @@ export const planets = [
                     type: "height",
                     maxLevel: 7,
                     heightMultiplier:2,
-                    requestUrlFormat: true?"http://localhost:8002/heightNormalized/{z}/{y}/{x}.jpg":"http://121.40.212.118:5000/data/tile/moon/height/{z}/{y}/{x}.png"
+                    requestUrlFormat: true?"http://localhost:8002/height/{z}/{y}/{x}.png":"http://121.40.212.118:5000/data/tile/moon/height/{z}/{y}/{x}.png"
                 }
             ]
         }
@@ -203,8 +203,8 @@ export const planets = [
 
 
 export function createStarsTestNode(name,datasourceFormat,requestUrl,requestUrlPrefix,magExponent){
-    //const renderableStars = new RenderableStars({requestUrl:requestUrl,requestUrlPrefix:requestUrlPrefix, dataFormat:datasourceFormat,magExponent:magExponent});
-    const renderableStars = null;
+    const renderableStars = new RenderableStars({requestUrl:requestUrl,requestUrlPrefix:requestUrlPrefix, dataFormat:datasourceFormat,magExponent:magExponent});
+    //const renderableStars = null;
     const root = appContext.scene.findNodeByIdentifier("root");
     const node = new SceneGraphNode({identifier:name,parentNode:root,renderableObject:renderableStars});
     return node;

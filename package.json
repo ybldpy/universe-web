@@ -4,7 +4,8 @@
     "lerc": "^4.0.4",
     "stats.js": "^0.17.0",
     "three": "^0.170.0",
-    "three-stdlib": "^2.29.7"
+    "three-stdlib": "^2.29.7",
+    "tiff": "^6.1.1"
   },
   "devDependencies": {
     "@types/dat.gui": "^0.7.12",

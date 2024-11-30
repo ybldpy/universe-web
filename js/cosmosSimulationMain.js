@@ -43,7 +43,7 @@ class App{
         // this.scene.addNode(createOrbitTestNode());
         this.scene.addNode(createStarsTestNode("stars","speck","/data/stars/stars.speck","",4.0));
         this.scene.addNode(createStarsTestNode("Gaia","streamOctree","/data/stars/octree/index.json","/data/stars/octree",5.0))
-        this.scene.addNode(createStarsTestNode("LAMOST","streamOctree","data/stars/octree_LA/index.json","/data/stars/octree_LA",6.0))
+        this.scene.addNode(createStarsTestNode("LAMOST","streamOctree","/data/stars/octree_LA/index.json","/data/stars/octree_LA",6.0))
         planets.forEach((i)=>{this.addGraphNode(i);});
         createSolarSystemPlantsOrbitNode().forEach((node)=>{
             this.scene.addNode(node)

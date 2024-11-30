@@ -233,6 +233,9 @@ class HeightTileProvider extends TileProvider{
     }
 
 
+
+
+
     downloadTile(requestUrl,tileIndex){
 
 
@@ -263,6 +266,21 @@ class HeightTileProvider extends TileProvider{
         //     return;
         // }
 
+
+        // if (true){
+        //
+        //
+        //     fetch(requestUrl).then(response=>response.arrayBuffer()).then(arrayBuffer=>{
+        //         const heightBuffer = new Float32Array(arrayBuffer);
+        //         tile.texture = new THREE.DataTexture(heightBuffer,1024,512,THREE.RedFormat,THREE.FloatType)
+        //         tile.texture.generateMipmaps = false;
+        //         tile.status = Tile.STATUS.available
+        //         tile.uploadTextureToGPU()
+        //     })
+        //
+        //     return;
+        // }
+
         Image.load(requestUrl).then((image)=>{
 
             //let dataView = new DataView(image.data.buffer);
@@ -272,7 +290,12 @@ class HeightTileProvider extends TileProvider{
 
             //console.log(image.getPixelsArray());
             if (image.bitDepth == 8){
-                typedBuffer = new Uint8Array(image.data.buffer)
+
+                typedBuffer = new Uint8Array(image.getPixelsArray().length);
+                image.getPixelsArray().forEach((v,i)=>{
+                    typedBuffer[i] = v[0]
+                })
+                //typedBuffer = new Uint8Array(image.data.buffer)
 
             }
             else if(image.bitDepth==16){
@@ -281,19 +304,29 @@ class HeightTileProvider extends TileProvider{
             else if(image.bitDepth==32){
                 typedBuffer = new Float32Array(image.data.buffer);
             }
-
-            heightBuffer = new Float32Array(typedBuffer.length);
+            heightBuffer = new Float32Array(image.width*image.height);
             let minValue = 0;
             let maxValue = 0;
-            typedBuffer.forEach((v,i)=>{heightBuffer[i] = v;maxValue = Math.max(maxValue,v);});
-            console.log(heightBuffer)
+
+            typedBuffer.forEach((v,i)=>{heightBuffer[i]=v;minValue = Math.min(minValue,v);});
+            const renderColor = new THREE.Vector4(0.0,0.0,0.0,1.0);
+            if (tileIndex.x%2==1){
+                renderColor.z = 1
+            }
+            if (tileIndex.y%2 == 1){
+                renderColor.y = 1;
+            }
+
+
             tile.maxPixelValue = image.maxValue;
             tile.minPixelValue = minValue;
             tile.texture = new THREE.DataTexture(heightBuffer, image.width, image.height, THREE.RedFormat, THREE.FloatType,THREE.UVMapping,
                 THREE.ClampToEdgeWrapping,THREE.ClampToEdgeWrapping,
-                THREE.LinearFilter,THREE.LinearFilter);
+                THREE.NearestFilter,THREE.NearestFilter);
             //tile.texture.isDataTexture = false;
             tile.status = Tile.STATUS.available;
+            tile.texture.flipY = true
+            tile.texture.flipX = true
             tile.uploadTextureToGPU();
             tile.texture.generateMipmaps = false;
             this.currentMaxLevel = Math.max(tileIndex.level,this.currentMaxLevel);
@@ -571,7 +604,7 @@ export class RenderablePlanet extends RenderableObject{
     out vec4 vsPosition;
     out float depth;
     out vec4 posCamSpace;
-    out float vHeight;
+    out vec4 vHeightColor;
     
     
     #ifndef LAYER
@@ -580,12 +613,13 @@ export class RenderablePlanet extends RenderableObject{
         vec2 uvOffset;
         float scale;
     };
+    #endif
     
-    struct Layer{
+    struct HeightLayer{
         sampler2D tile;
         UVTransform uvTransform;
     };
-    #endif
+    
     
     
     
@@ -595,7 +629,7 @@ export class RenderablePlanet extends RenderableObject{
     uniform float heightMultiplier;
     uniform float minHeight;
     uniform float heightOffset;
-    uniform Layer heightLayer;
+    uniform HeightLayer heightLayer;
     uniform mat4 modelTransform;
     
     bool isBorder(vec2 uv){
@@ -616,13 +650,18 @@ export class RenderablePlanet extends RenderableObject{
             vec2 hOffset = vec2(0.0,0.5)*heightLayer.uvTransform.scale;
             // hUv+=widthOffset;
             // hUv+=hOffset;
-            float h = texture(heightLayer.tile,vec2(hUv.x,hUv.y)).x;
-            vHeight = h;
-            h*=heightMultiplier;
-            h+=heightOffset;
+            float h = 0.0;
+            vHeightColor = texture(heightLayer.tile,in_uv);
+            
             if(uv.x<0.0||uv.x>1.0||uv.y<0.0||uv.y>1.0){
                 // h = h - min(radius, lonLatScalingFactor.y/2.0*1000000.0);
-                h = minHeight;
+                h = minHeight*heightMultiplier;
+            }
+            else {
+                h = texture(heightLayer.tile,vec2(hUv.x,hUv.y)).x;
+                h*=heightMultiplier;
+                h+=heightOffset;
+            
             }
             // else {
             //     // h+=600.0;
@@ -652,7 +691,7 @@ export class RenderablePlanet extends RenderableObject{
     in vec2 out_uv;
     in vec4 vsPosition;
     in vec4 posCamSpace;
-    in float vHeight;
+    in vec4 vHeightColor;
     #ifndef LAYER
     #define LAYER
     struct UVTransform{
@@ -704,16 +743,16 @@ export class RenderablePlanet extends RenderableObject{
         //gl_FragDepth = LinearizeDepth(-vsPosition.w);
         gl_FragDepth = log(1.0*vsPosition.z+1.0)/ log(1.0 * 1e20 +1.0);
         //gl_FragDepth = (vsPosition.z - 0.1) / (1e20-0.1);
-        // vec4 color = vec4(texture(colorLayer.tile,colorLayer.uvTransform.uvOffset + colorLayer.uvTransform.scale*out_uv).rgb,1.0);
-        vec4 color = vec4(vHeight,vHeight,vHeight,1.0);
+        vec4 color = vec4(texture(colorLayer.tile,colorLayer.uvTransform.uvOffset + colorLayer.uvTransform.scale*out_uv).rgb,1.0);
+        //vec4 color = vec4(vHeight,vHeight,vHeight,1.0);
         gPosition = vec4(posCamSpace.xyz,0.0);
         if(chunkEdge&&isBorder(out_uv)){
             color = vec4(1.0,0.0,0.0,1.0);
         }
-        // if(childIndexRenderEnabled){
-        //
-        //     color = mix(color,childIndexColor,0.5);
-        // }
+        
+
+        //color = mix(color,vHeightColor,0.5);
+        
         
         // col = vec4(1.0,0.0,0.0,1.0);
         fragColor = color;
