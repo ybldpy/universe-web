@@ -134,10 +134,10 @@ class App{
 }
 
 
-const renderer = new THREE.WebGLRenderer({});
+const renderer = new THREE.WebGLRenderer({logarithmicDepthBuffer:true});
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
-const camera = new THREE.PerspectiveCamera( 35, window.innerWidth / window.innerHeight, 0.1, 1e15 );
+const camera = new THREE.PerspectiveCamera( 35, window.innerWidth / window.innerHeight, 1, 1e25 );
 const scene = new THREE.Scene();
 const app = new App(renderer,scene,camera);
 

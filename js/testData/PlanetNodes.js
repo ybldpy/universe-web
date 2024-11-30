@@ -65,13 +65,13 @@ export const planets = [
             layers:[
                 {
                     type:"color",
-                    maxLevel:13,
+                    maxLevel:11,
                     requestUrlFormat:testFlag?"http://localhost:8001/color/{z}/{y}/{x}.jpg":"http://121.40.212.118:5000/data/tile/earth_uploadedTile/color/{z}/{y}/{x}.jpg"
                 },
                 {
                     type:"height",
-                    maxLevel: 5,
-                    requestUrlFormat: "http://localhost:8001/height2/built/{z}/{y}/{x}.tif",
+                    maxLevel: 7,
+                    requestUrlFormat: testFlag?"http://localhost:8001/height2/built/{z}/{y}/{x}.tif":"/data/tile/earth/height/{z}/{y}/{x}.tif",
                     // requestUrlFormat: "/data/t.jpg",
                     heightMultiplier:20
                 }
@@ -95,13 +95,13 @@ export const planets = [
                 {
                     type:"color",
                     maxLevel:8,
-                    requestUrlFormat:true?"http://localhost:8002/color2/{z}/{y}/{x}.jpg":"http://121.40.212.118:5000/data/tile/moon/color/{z}/{y}/{x}.jpg"
+                    requestUrlFormat:testFlag?"http://localhost:8002/color2/{z}/{y}/{x}.jpg":"http://121.40.212.118:5000/data/tile/moon/color2/{z}/{y}/{x}.jpg"
                 },
                 {
                     type: "height",
                     maxLevel: 7,
                     heightMultiplier:2,
-                    requestUrlFormat: true?"http://localhost:8002/height/{z}/{y}/{x}.png":"http://121.40.212.118:5000/data/tile/moon/height/{z}/{y}/{x}.png"
+                    requestUrlFormat: testFlag?"http://localhost:8002/height/{z}/{y}/{x}.png":"http://121.40.212.118:5000/data/tile/moon/height/{z}/{y}/{x}.png"
                 }
             ]
         }

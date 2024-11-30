@@ -2,10 +2,7 @@ import * as THREE from "three"
 import {RenderableObject, RenderData,UpdateData} from "../rendering/base"
 import {Box3} from "three";
 import {appContext} from "../applicationContext";
-
-
-
-
+import {commonFunctionsInclude} from "../rendering/common";
 
 
 const createBillboardDrawIndex = function (counts){
@@ -455,7 +452,7 @@ export class RenderableStars extends RenderableObject {
     uniform vec3 cameraUp;
     uniform vec3 cameraPos;
     
-    
+    ${commonFunctionsInclude}
     
     
     
@@ -518,6 +515,9 @@ export class RenderableStars extends RenderableObject {
     uniform sampler2D colorTexture;
     
     
+    ${commonFunctionsInclude}
+    
+    
     vec4 getBVColor(float bv){
         
         return texture(colorTexture,vec2((bv+0.4)/2.4,0.0));
@@ -527,7 +527,7 @@ export class RenderableStars extends RenderableObject {
     
     
     void main(){
-        gl_FragDepth = log(vsDepth+1.0) / log(1e15+1.0);
+        gl_FragDepth = calculateLogDepth(vsDepth);
         vec2 shiftedCoords = (vUV - 0.5) * 2.0;
         
         
@@ -661,6 +661,7 @@ export class RenderableStars extends RenderableObject {
             },
             transparent:true,
             //depthTest: false,
+            depthWrite:false,
             blending: THREE.AdditiveBlending,
             side:THREE.DoubleSide
         })
@@ -668,6 +669,7 @@ export class RenderableStars extends RenderableObject {
         this.mesh.material = this.shaderMaterial
         this.mesh.frustumCulled = false
         this.starBase.add(this.mesh)
+        this.starBase.renderOrder = 1;
     }
 
 

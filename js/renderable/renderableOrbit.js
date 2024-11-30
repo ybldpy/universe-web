@@ -2,6 +2,7 @@ import * as THREE from "three"
 import {RenderableObject,RenderData,UpdateData} from "../rendering/base";
 import {GLSL3, ShaderMaterial} from "three";
 import {appContext} from "../applicationContext";
+import {commonFunctionsInclude} from "../rendering/common";
 
 
 export class RenderableOrbit extends RenderableObject{
@@ -16,12 +17,16 @@ export class RenderableOrbit extends RenderableObject{
    
     out float vsDepth;
     uniform float radius;
+    
+    
+    
+    ${commonFunctionsInclude}
     void main(){
         
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position * radius,1.0);
         vsDepth = gl_Position.w;
         gl_PointSize = 4.0;
-        gl_Position.z = 0.0; 
+        gl_Position.z = 0.0;
     }
     `
 
@@ -35,11 +40,14 @@ export class RenderableOrbit extends RenderableObject{
     layout(location = 0) out vec4 fragColor;
     
     
+    
+    ${commonFunctionsInclude}
+    
     uniform vec4 orbitColor;
     
     void main(){
     
-        gl_FragDepth = log(vsDepth+1.0) / log(1e20+1.0);
+        gl_FragDepth = calculateLogDepth(vsDepth);
         fragColor = orbitColor;
         gPosition = vec4(1.0);
     

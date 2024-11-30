@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {clamp} from 'three/src/math/mathutils';
 import {Image} from "image-js"
 import {RenderableObject} from './rendering/base';
+import {commonFunctionsInclude} from "./rendering/common";
 
 const utils = {
     clamp:function(value,min,max){
@@ -623,6 +624,8 @@ export class RenderablePlanet extends RenderableObject{
     
     
     
+    
+    
     uniform float radius;
     uniform vec2 minLatLon;
     uniform vec2 lonLatScalingFactor;
@@ -631,6 +634,9 @@ export class RenderablePlanet extends RenderableObject{
     uniform float heightOffset;
     uniform HeightLayer heightLayer;
     uniform mat4 modelTransform;
+    
+    
+    ${commonFunctionsInclude}
     
     bool isBorder(vec2 uv){
         const float BorderSize = 0.005;
@@ -687,6 +693,9 @@ export class RenderablePlanet extends RenderableObject{
 
     layout(location = 1) out vec4 gPosition;
     layout(location = 0) out vec4 fragColor;
+    
+    
+    
 
     in vec2 out_uv;
     in vec4 vsPosition;
@@ -704,6 +713,10 @@ export class RenderablePlanet extends RenderableObject{
         UVTransform uvTransform;
     };
     #endif
+    
+    
+    
+    ${commonFunctionsInclude}
 
     bool isBorder(vec2 uv){
         const float BorderSize = 0.005;
@@ -741,7 +754,7 @@ export class RenderablePlanet extends RenderableObject{
     uniform bool childIndexRenderEnabled;
     void main(){
         //gl_FragDepth = LinearizeDepth(-vsPosition.w);
-        gl_FragDepth = log(1.0*vsPosition.z+1.0)/ log(1.0 * 1e20 +1.0);
+        gl_FragDepth = calculateLogDepth(vsPosition.w);
         //gl_FragDepth = (vsPosition.z - 0.1) / (1e20-0.1);
         vec4 color = vec4(texture(colorLayer.tile,colorLayer.uvTransform.uvOffset + colorLayer.uvTransform.scale*out_uv).rgb,1.0);
         //vec4 color = vec4(vHeight,vHeight,vHeight,1.0);
@@ -853,6 +866,7 @@ export class RenderablePlanet extends RenderableObject{
             fragmentShader:RenderablePlanet.fs,
             glslVersion:THREE.GLSL3,
             side:THREE.FrontSide,
+            transparent:false,
             uniforms:this.createGlobalShaderUniformStructure()
         });
     }
