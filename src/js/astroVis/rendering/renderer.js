@@ -5,6 +5,7 @@ export class FrameBufferRenderer{
         this.renderer = renderer;
         const width = this.renderer.domElement.clientWidth;
         const height = this.renderer.domElement.clientHeight;
+        this.postProcessShaderQueue = [];
         this.gBuffer = new THREE.WebGLRenderTarget(width * window.devicePixelRatio,
             height * window.devicePixelRatio,{
                 count:2,
@@ -31,7 +32,7 @@ export class FrameBufferRenderer{
                 depthBuffer:false,
                 type:THREE.FloatType
             });
-        this.postProcessShaderQueue = [];
+        // this.postProcessShaderQueue = [];
         this.postScene = new THREE.Scene();
         this.postCamera = new THREE.OrthographicCamera(-1,1,1,-1,0.1,2);
         const planeGeo = new THREE.PlaneGeometry(2,2);
@@ -69,7 +70,7 @@ export class FrameBufferRenderer{
         return this.postProcessShaderQueue;
     }
 
-    excutePostProcessing(camera,postProcessShaders,renderTarget){
+    excutePostProcessing(camera,postProcessShaders){
         this.renderer.setRenderTarget(this.rtA);
         this.postScene.add(this.plane);
         this.plane.material = this.postShader;
@@ -92,8 +93,6 @@ export class FrameBufferRenderer{
         }
         this.plane.material = this.postShader;
         this.plane.material.uniforms.screenColor.value = renderedTarget.texture;
-        this.renderer.setRenderTarget(renderTarget);
-        this.renderer.render(this.postScene,this.postCamera);
     }
 
     render(scene,camera){
@@ -102,7 +101,8 @@ export class FrameBufferRenderer{
         // render gBuffer
         this.renderer.render(scene,camera);
         this.excutePostProcessing(camera,this.getPostProcessShaderQueue(),originalRenderTarget);
-        // this.renderer.setRenderTarget(renderTarget);
+        this.renderer.setRenderTarget(originalRenderTarget);
+        this.renderer.render(this.postScene,this.postCamera);
     }
 
     getSize(){

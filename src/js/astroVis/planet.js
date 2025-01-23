@@ -281,20 +281,6 @@ void main(){
 
 
 
-class DeferredRenderingTasks{
-    constructor(){
-        this.tasks = [];
-    }
-    addTask(task){
-        this.tasks.push(task);
-    }
-    excuteTasks(renderingTarget,camera){
-        while(this.tasks.length>0){
-            const task = this.tasks.shift();
-            task(renderingTarget,camera);
-        }
-    }   
-}
 
 
 class TileIndex{
@@ -1135,44 +1121,6 @@ class RenderableAtmosphere{
         return this.parent.getPosition();
     }
 
-
-    initAtmosphere(){
-        // const geometry = new THREE.SphereGeometry(this.radius,64,64);
-        //     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // 颜色和强度根据需求设置
-        //     scene.add(ambientLight);
-        
-        //     const pointLight = new THREE.PointLight(0xffffff, 1); // 颜色、强度
-        //     pointLight.position.set(7000e3, 7000e3, 7000e3); // 设置光源位置
-        //     scene.add(pointLight);
-        //     const atmosphereMaterial = new THREE.MeshPhysicalMaterial({
-        //         color: 0x0077ff, // 大气层颜色
-        //         transparent: true,
-        //         opacity: 0.7, // 透明度
-        //         roughness: 0.1, // 粗糙度
-        //         metalness: 0.1, // 金属度
-        //         transmission: 0.3, // 透射率
-        //         clearcoat: 1, // 透明面漆
-        //         clearcoatRoughness: 0.1, // 透明面漆粗糙度
-        //         reflectivity: 0.9,
-        //         side:THREE.FrontSide,
-        //         blending:THREE.AdditiveBlending
-        //     });
-        //     this.atmosphere = new THREE.Mesh(geometry,atmosphereMaterial);
-        //     scene.add(this.atmosphere);
-        // `
-        // viewSamples = 16;
-        // lightSamples = 16;
-        // I_sun = 20.0;
-        // R_e = 6358e3;
-        // R_a = 6370e3;
-        // beta_R = vec3(5.8e-3, 13.5e-3, 33.1e-3);
-        // beta_M = 21e-6;
-        // H_R = 7994.0;
-        // H_M = 1200;
-        // g = 0.888;
-        
-        // `
-    }
 
     render(camera,postScene,postProcessShaderQueue){
         const uniforms = this.shader.uniforms;

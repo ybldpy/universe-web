@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {clamp} from 'three/src/math/mathutils';
 import {Image} from "image-js"
-import {RenderableObject} from './rendering/base';
-import {commonFunctionsInclude} from "./rendering/common";
+import {RenderableObject} from '../rendering/base';
+import {commonFunctionsInclude} from "../rendering/common";
 
 const utils = {
     clamp:function(value,min,max){
@@ -601,7 +601,9 @@ export class RenderablePlanet extends RenderableObject{
     static globalVs = `
     precision highp float;
     in vec2 in_uv;
+    
     out vec2 out_uv;
+    out vec3 normalVec;
     out vec4 vsPosition;
     out float depth;
     out vec4 posCamSpace;
@@ -651,6 +653,8 @@ export class RenderablePlanet extends RenderableObject{
             vec2 lonlat = lonLatScalingFactor * in_uv + vec2(minLatLon.y,minLatLon.x);
             float cosLat = cos(lonlat.y);
             vec3 normal = vec3(cosLat * cos(lonlat.x), cosLat * sin(lonlat.x), sin(lonlat.y));
+            
+            normalVec = mat3(transpose(inverse(modelTransform))) * normal;
             vec2 hUv = (in_uv*heightLayer.uvTransform.scale + heightLayer.uvTransform.uvOffset);
             vec2 widthOffset = vec2(0.5,0.0)*heightLayer.uvTransform.scale;
             vec2 hOffset = vec2(0.0,0.5)*heightLayer.uvTransform.scale;
@@ -698,6 +702,7 @@ export class RenderablePlanet extends RenderableObject{
     
 
     in vec2 out_uv;
+    in vec3 normalVec;
     in vec4 vsPosition;
     in vec4 posCamSpace;
     in vec4 vHeightColor;
@@ -759,11 +764,17 @@ export class RenderablePlanet extends RenderableObject{
         vec4 color = vec4(texture(colorLayer.tile,colorLayer.uvTransform.uvOffset + colorLayer.uvTransform.scale*out_uv).rgb,1.0);
         //vec4 color = vec4(vHeight,vHeight,vHeight,1.0);
         gPosition = vec4(posCamSpace.xyz,0.0);
+        
+        vec3 dictFromLightToPlanet = normalize(vec3(-1e11,0.0,0.0));
+        
+        
+        float diff = max(dot(dictFromLightToPlanet,normalVec),0.0);
+        vec3 lightColor = vec3(1.0,1.0,1.0) * diff;
+        color *= diff;
         if(chunkEdge&&isBorder(out_uv)){
             color = vec4(1.0,0.0,0.0,1.0);
         }
         
-
         //color = mix(color,vHeightColor,0.5);
         
         

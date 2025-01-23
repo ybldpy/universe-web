@@ -39,5 +39,5 @@ export class RenderableObject{
     addUIComponent(uiComponent){}
 
     update(updateData){}
-    render(renderData){}
+    render(renderData,postRenderingTaskQueue){}
 }

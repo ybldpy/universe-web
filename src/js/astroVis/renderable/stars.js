@@ -1,6 +1,5 @@
 import * as THREE from "three"
 import {RenderableObject, RenderData,UpdateData} from "../rendering/base"
-import {Box3} from "three";
 import {appContext} from "../applicationContext";
 import {commonFunctionsInclude} from "../rendering/common";
 
@@ -111,7 +110,7 @@ class DataLoader{
 
     parseSpeck(data){
         const lines = data.trim().split("\n");
-        const regex = /^\D/
+        const regex = /^[+-]?\d/
         const datavarRegex = /datavar(?:k|\s\d+)\s+(\w+)/
         const cols = []
         const positions = []
@@ -121,7 +120,7 @@ class DataLoader{
         lines.forEach((line)=>{
             line = line.trim()
             if(line.startsWith("#")){return;}
-            if (regex.test(line)){
+            if (!regex.test(line)){
                 return;
             }
             const row = line.split(" ");
@@ -134,21 +133,22 @@ class DataLoader{
                 speed[speed.length-1] = 0
             }
         })
+        console.log(positions)
         return new StarDataBuffer({positions:positions,bvLumAbsMag:bvLumAbsMag,speed:speed,velocity:velocity})
     }
 
 
-    load(requestUrl,requestFormat,onLoad=(starData)=>{},onError=(response)=>{}){
+    load(requestUrl,requestDataFormat,onLoad=(starData)=>{},onError=(response)=>{}){
         fetch(requestUrl).then(async (response)=>{
             // let rows = []
             // let cols = []
             if (response.ok){
 
-                if (requestFormat === DataLoader.DATA_SOURCE_FORMAT.STREAM_OCTREE){
+                if (requestDataFormat === DataLoader.DATA_SOURCE_FORMAT.STREAM_OCTREE){
                     const starData = this.parseStreamOctreeNode(await response.arrayBuffer())
                     onLoad(starData)
                 }
-                else if (requestFormat === DataLoader.DATA_SOURCE_FORMAT.SPECK){
+                else if (requestDataFormat === DataLoader.DATA_SOURCE_FORMAT.SPECK){
                     const starData = this.parseSpeck(await response.text());
                     onLoad(starData);
                 }
@@ -676,14 +676,12 @@ export class RenderableStars extends RenderableObject {
 
 
 
-    loadStarsFromSpeck(url,dataSourceFormat){
+    loadStarsFromSpeck(url){
 
 
 
-        this.dataLoader.load(url,dataSourceFormat,(starData)=>{
+        this.dataLoader.load(url,DataLoader.DATA_SOURCE_FORMAT.SPECK,(starData)=>{
 
-            let maxSpeed = -1e30
-            let minSpeed = 1e30
             normalizeVelocity(starData.getVelocity());
             const indices =createBillboardDrawIndex(Math.floor(starData.getPositions().length/3))
             const arrayBuffers = createBillboardBuffer(starData)
@@ -703,7 +701,7 @@ export class RenderableStars extends RenderableObject {
 
         dataFormat = dataFormat.toLowerCase()
         if (dataFormat === DataLoader.DATA_SOURCE_FORMAT.SPECK.toLowerCase()){
-            this.loadStarsFromSpeck(requestUrl,dataFormat)
+            this.loadStarsFromSpeck(requestUrl)
         }
         else if (dataFormat === DataLoader.DATA_SOURCE_FORMAT.STREAM_OCTREE.toLowerCase()){
             this.createOctreeFromIndex(requestUrl,requreUrlPrefix)
@@ -741,108 +739,6 @@ export class RenderableStars extends RenderableObject {
             dataTexture.needsUpdate = true
             this.setUniformsTexture(dataTexture,this.COLOR_MAP_TEXTURE_NAME)
         })
-    }
-
-
-
-    renderBoundingBox(renderData){
-
-
-        if(this.renderBox){
-
-            const shaderMaterial = new THREE.ShaderMaterial({
-                version:THREE.GLSL3,
-                vertexShader:`
-                
-                    highp float;
-
-                
-                    out float depth;
-                    
-                    void main(){
-                    
-                    
-                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-                        depth = gl_Position.w;
-                        gl_Position.z = 0.0;
-                    }
-                `,
-                fragmentShader:`
-                    
-                    
-                    highp float;
-                    
-                    in float depth;
-                    layout(location = 1) out vec4 gPosition;
-                    
-                    
-                    void main(){
-                        gl_FragDepth = log(depth+1.0) / log(1e15+1.0);
-                        
-                        pc_fragColor = vec4(0.0,1.0,0.0,1.0);
-                        gPosition = vec4(1.0)
-                                    
-                    }
-                `
-            })
-
-            const pcScale = 1e13
-            const translation = renderData.transformation.translation;
-            this.octree.nonEmptyLeafList.forEach((node)=>{
-
-                const nodeBoundingBoxCenterWorldSpace = new THREE.Vector3()
-                const boundBoxSize = new THREE.Vector3();
-                const halfD = (node.dimision)/2
-                nodeBoundingBoxCenterWorldSpace.x = (node.originY+halfD)*pcScale
-                nodeBoundingBoxCenterWorldSpace.y = (node.originX+halfD)*pcScale
-                nodeBoundingBoxCenterWorldSpace.z= (node.originZ+halfD)*pcScale
-                nodeBoundingBoxCenterWorldSpace.add(translation)
-                boundBoxSize.x = halfD*2
-                boundBoxSize.y = halfD*2
-                boundBoxSize.z = boundBoxSize.y
-                const boundingBox = new Box3()
-                boundingBox.setFromCenterAndSize(nodeBoundingBoxCenterWorldSpace,boundBoxSize)
-                const min = boundingBox.min;
-                const max = boundingBox.max;
-
-                const vertices = [
-                    new THREE.Vector3(min.x, min.y, min.z),
-                    new THREE.Vector3(max.x, min.y, min.z),
-                    new THREE.Vector3(max.x, max.y, min.z),
-                    new THREE.Vector3(min.x, max.y, min.z),
-                    new THREE.Vector3(min.x, min.y, max.z),
-                    new THREE.Vector3(max.x, min.y, max.z),
-                    new THREE.Vector3(max.x, max.y, max.z),
-                    new THREE.Vector3(min.x, max.y, max.z),
-                ];
-
-                // 定义边线的索引
-                const edges = [
-                    0, 1, 1, 2, 2, 3, 3, 0, // 底面
-                    4, 5, 5, 6, 6, 7, 7, 4, // 顶面
-                    0, 4, 1, 5, 2, 6, 3, 7, // 连接上下的边
-                ];
-
-                // 创建线框的几何体
-                const geometry = new THREE.BufferGeometry();
-                const verticesArray = new Float32Array(edges.length * 3); // 每个顶点 3 个值
-                edges.forEach((index, i) => {
-                    verticesArray[i * 3] = vertices[index].x;
-                    verticesArray[i * 3 + 1] = vertices[index].y;
-                    verticesArray[i * 3 + 2] = vertices[index].z;
-                });
-                geometry.setAttribute(
-                    "position",
-                    new THREE.BufferAttribute(verticesArray, 3)
-                );
-                // 创建 LineSegments
-                const lineSegments = new THREE.LineSegments(geometry, shaderMaterial);
-                // 添加到场景
-                this.starBase.add(lineSegments);
-            })
-
-            this.renderBox = false
-        }
     }
     findVisibleNode(camera,octree,translation){
         const leafNodes = octree.nonEmptyLeafList
@@ -998,6 +894,8 @@ export class RenderableStars extends RenderableObject {
         this.mesh.material.uniforms.cameraUp.value = up
         // this.starBase.translateZ()
         this.starBase.position.set(translation.x,translation.y,translation.z);
+        //this.starBase.children.forEach((c)=>c.position.set(translation.x,translation.y,translation.z))
+
 
     }
 

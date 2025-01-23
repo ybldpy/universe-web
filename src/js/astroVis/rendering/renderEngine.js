@@ -20,7 +20,7 @@ export class RenderEngine{
     }
     render(){
         if (this.scene == null){return;}
-        this.scene.render(this.threeJsScene,this.camera);
+        this.scene.render(this.threeJsScene,this.camera,this.frameBufferRenderer.getPostProcessShaderQueue());
         this.frameBufferRenderer.render(this.threeJsScene,this.camera);
     }
 }

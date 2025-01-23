@@ -38,14 +38,17 @@ export const planets = [
             scaling: [1,1,1]
         },
         renderableObject: {
-            radius: 6950e5,
-            layers:[
-                {
-                    type:"color",
-                    maxLevel: 2,
-                    requestUrlFormat: "/data/asset/sun/tile/0/0/0.jpg"
-                }
-            ]
+            type: "renderablePlanet",
+            params:{
+                radius: 6950e5,
+                layers: [
+                    {
+                        type: "color",
+                        maxLevel: 2,
+                        requestUrlFormat: "/data/asset/sun/tile/0/0/0.jpg"
+                    }
+                ]
+            }
         }
     },
 
@@ -60,22 +63,24 @@ export const planets = [
             scaling:[1,1,1]
         },
         renderableObject:{
-            type:"renderableGlobe",
-            radius:6538e3,
-            layers:[
-                {
-                    type:"color",
-                    maxLevel:11,
-                    requestUrlFormat:testFlag?"http://localhost:8001/color/{z}/{y}/{x}.jpg":"http://121.40.212.118:5000/data/tile/earth_uploadedTile/color/{z}/{y}/{x}.jpg"
-                },
-                {
-                    type:"height",
-                    maxLevel: 7,
-                    requestUrlFormat: testFlag?"http://localhost:8001/height2/built/{z}/{y}/{x}.tif":"/data/tile/earth/height/{z}/{y}/{x}.tif",
-                    // requestUrlFormat: "/data/t.jpg",
-                    heightMultiplier:20
-                }
-            ]
+            type:"renderablePlanet",
+            params:{
+                radius: 6538e3,
+                layers: [
+                    {
+                        type: "color",
+                        maxLevel: 11,
+                        requestUrlFormat: testFlag ? "http://localhost:8001/color/{z}/{y}/{x}.jpg" : "http://121.40.212.118:5000/data/tile/earth_uploadedTile/color/{z}/{y}/{x}.jpg"
+                    },
+                    {
+                        type: "height",
+                        maxLevel: 7,
+                        requestUrlFormat: testFlag ? "http://localhost:8001/height2/built/{z}/{y}/{x}.tif" : "/data/tile/earth/height/{z}/{y}/{x}.tif",
+                        // requestUrlFormat: "/data/t.jpg",
+                        heightMultiplier: 20
+                    }
+                ]
+            },
         }
     },
 
@@ -89,21 +94,23 @@ export const planets = [
             scaling: [1,1,1],
         },
         renderableObject:{
-            type:"renderableGlobe",
-            radius:3830e3,
-            layers:[
-                {
-                    type:"color",
-                    maxLevel:8,
-                    requestUrlFormat:testFlag?"http://localhost:8002/color2/{z}/{y}/{x}.jpg":"http://121.40.212.118:5000/data/tile/moon/color2/{z}/{y}/{x}.jpg"
-                },
-                {
-                    type: "height",
-                    maxLevel: 7,
-                    heightMultiplier:2,
-                    requestUrlFormat: testFlag?"http://localhost:8002/height/{z}/{y}/{x}.png":"http://121.40.212.118:5000/data/tile/moon/height/{z}/{y}/{x}.png"
-                }
-            ]
+            type:"renderablePlanet",
+            params:{
+                radius: 3830e3,
+                layers: [
+                    {
+                        type: "color",
+                        maxLevel: 8,
+                        requestUrlFormat: testFlag ? "http://localhost:8002/color2/{z}/{y}/{x}.jpg" : "http://121.40.212.118:5000/data/tile/moon/color2/{z}/{y}/{x}.jpg"
+                    },
+                    {
+                        type: "height",
+                        maxLevel: 7,
+                        heightMultiplier: 2,
+                        requestUrlFormat: testFlag ? "http://localhost:8002/height/{z}/{y}/{x}.png" : "http://121.40.212.118:5000/data/tile/moon/height/{z}/{y}/{x}.png"
+                    }
+                ]
+            }
         }
     },
 
@@ -121,15 +128,36 @@ export const planets = [
             scaling: [1,1,1]
         },
         renderableObject: {
-            radius:71492000,
-            type:"renderableGlobe",
-            layers: [
-                {
-                    type: "color",
-                    maxLevel: 2,
-                    requestUrlFormat: "/data/asset/jupiter/tile/{z}/{y}/{x}.png"
-                }
-            ]
+            type:"renderablePlanet",
+            params:{
+                layers: [
+                    {
+                        type: "color",
+                        maxLevel: 2,
+                        requestUrlFormat: "/data/asset/jupiter/tile/{z}/{y}/{x}.png"
+                    }
+                ],
+                radius:71492000,
+            }
+        }
+    },
+
+    {
+        identifier: "earthAtmosphere",
+        parent: "earth",
+        renderableObject: {
+            type: "planetAtmosphere",
+            params:{
+                radius:6590e3,
+                planetRadius:6538e3,
+                intensity:17,
+                scatteringtregh:8,
+                falloff:6,
+                density:4,
+                redWave:857,
+                blueWave:619,
+                greenWave:778
+            }
         }
     }
 
@@ -234,7 +262,6 @@ export function createSolarSystemPlantsOrbitNode(){
 export function createOrbitTestNode(nodeIdentifier,orbitTarget,parent){
     const renderableStars = new RenderableOrbit(orbitTarget);
     const root = appContext.scene.findNodeByIdentifier(parent);
-    console.log(root)
     const node = new SceneGraphNode({identifier:nodeIdentifier,parentNode:root,renderableObject:renderableStars});
     return node;
 }
