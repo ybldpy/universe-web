@@ -1,25 +1,27 @@
 
-import {createRouter, createWebHistory} from "vue-router";
-import UploadedDataManagement from "../../pages/dataManagement/uploadedDataManagement.vue"
+import {createRouter, createWebHashHistory, createWebHistory} from "vue-router";
+import UploadedDataManagement from "../../pages/dataManagement/management.vue"
 import DataUpload from "../../pages/dataManagement/dataUpload.vue"
+import DataManagement from "../../pages/dataManagement.vue";
 
 
 
 const routes = [
+
     {
-        path:"/dataManagement/uploadedDataManagement",
+        path:"/",
         name:"Uploaded Data Management",
         component:UploadedDataManagement
     },
     {
-        path:"/dataManagement/dataUpload",
+        path:"/upload",
         name:"Data Upload",
         component: DataUpload
     }
 ]
 export default createRouter({
-    history:createWebHistory(),
-    routes
+    history:createWebHashHistory(),
+    routes,
 })
 
 
