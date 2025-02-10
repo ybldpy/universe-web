@@ -5,6 +5,7 @@
     "element-plus": "^2.9.3",
     "image-js": "^0.35.5",
     "lerc": "^4.0.4",
+    "papaparse": "^5.5.2",
     "stats.js": "^0.17.0",
     "three": "^0.170.0",
     "three-stdlib": "^2.29.7",

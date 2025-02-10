@@ -1,4 +1,4 @@
-import {tokenKey} from "../../commons/constants";
+import {tokenKey} from "../commons/constants";
 
 export const checkTokenValidation = function (){
     const token = localStorage.getItem(tokenKey)

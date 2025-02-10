@@ -6,7 +6,7 @@ import {RenderableOrbit} from "../renderable/renderableOrbit";
 
 const testFlag =false;
 
-export const planets = [
+const planets = [
 
 
     {
@@ -79,7 +79,11 @@ export const planets = [
                         // requestUrlFormat: "/data/t.jpg",
                         heightMultiplier: 20
                     }
-                ]
+                ],
+                shadow:{
+                    isShadow: true,
+                    shadowSource: "sun"
+                }
             },
         }
     },
@@ -109,7 +113,11 @@ export const planets = [
                         heightMultiplier: 2,
                         requestUrlFormat: testFlag ? "http://localhost:8002/height/{z}/{y}/{x}.png" : "http://121.40.212.118:5000/data/tile/moon/height/{z}/{y}/{x}.png"
                     }
-                ]
+                ],
+                shadow:{
+                    isShadow:true,
+                    shadowSource:"sun"
+                }
             }
         }
     },
@@ -138,6 +146,7 @@ export const planets = [
                     }
                 ],
                 radius:71492000,
+
             }
         }
     },
@@ -148,7 +157,7 @@ export const planets = [
         renderableObject: {
             type: "planetAtmosphere",
             params:{
-                radius:6590e3,
+                radius:6600e3,
                 planetRadius:6538e3,
                 intensity:17,
                 scatteringtregh:8,
@@ -227,14 +236,17 @@ export const planets = [
 ]
 
 
+export function defaultAssets(){
+    return [...planets];
+}
 
 
-
-export function createStarsTestNode(name,datasourceFormat,requestUrl,requestUrlPrefix,magExponent){
-    const renderableStars = new RenderableStars({requestUrl:requestUrl,requestUrlPrefix:requestUrlPrefix, dataFormat:datasourceFormat,magExponent:magExponent});
+export function createStarsTestNode(name,datasourceFormat,requestUrl,magExponent){
+    const renderableStars = new RenderableStars({requestUrl:requestUrl, dataFormat:datasourceFormat,magExponent:magExponent});
     //const renderableStars = null;
     const root = appContext.scene.findNodeByIdentifier("root");
     const node = new SceneGraphNode({identifier:name,parentNode:root,renderableObject:renderableStars});
+    node.setupUI(appContext.gui.scene.addFolder(name));
     return node;
 }
 

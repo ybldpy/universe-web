@@ -10,14 +10,58 @@
         <el-input v-model="uploadForm.datasetName"/>
       </el-form-item>
       <el-form-item prop="type" label="Data Type" >
-        <el-radio-group v-model="uploadForm.type">
+        <el-radio-group v-model="uploadForm.type" >
           <el-radio :value="uploadDataType.starCatalog">Star Catalog</el-radio>
-          <!--          <el-radio :value="uploadDataType.surface">Planet Surface</el-radio>-->
         </el-radio-group>
+      </el-form-item>
+      <el-form-item v-if="uploadForm.type===uploadDataType.starCatalog" label="Attribute mapping">
+        <el-row :gutter="2" style="width: 100%">
+          <el-col :span="8">
+            <el-select v-model="catalogAttributeMapping.bv" :clearable="true" placeholder="bv" @change="onCatalogAttributeMappingSelect">
+              <el-option  v-for="option in catalogAttributeMappingOption" :value="option.value" :disabled="option.selected"></el-option>
+            </el-select>
+          </el-col>
+          <el-col :span="8">
+            <el-select :clearable="true" v-model="catalogAttributeMapping.lum" placeholder="lumanity" @change="onCatalogAttributeMappingSelect">
+              <el-option  v-for="option in catalogAttributeMappingOption" :value="option.value" :disabled="option.selected"></el-option>
+            </el-select>
+          </el-col>
+          <el-col :span="8">
+            <el-select :clearable="true" v-model="catalogAttributeMapping.absMag" placeholder="absolute magnitude" @change="onCatalogAttributeMappingSelect">
+              <el-option  v-for="option in catalogAttributeMappingOption" :value="option.value" :disabled="option.selected"></el-option>
+            </el-select>
+          </el-col>
+        </el-row>
+        <el-row :gutter="2" style="width:100%">
+          <el-col :span="8">
+            <el-select :clearable="true" v-model="catalogAttributeMapping.vx" placeholder="x velocity" @change="onCatalogAttributeMappingSelect">
+              <el-option  v-for="option in catalogAttributeMappingOption" :value="option.value" :disabled="option.selected"></el-option>
+            </el-select>
+          </el-col>
+          <el-col :span="8">
+            <el-select :clearable="true" v-model="catalogAttributeMapping.vy" placeholder="y velocity" @change="onCatalogAttributeMappingSelect">
+              <el-option  v-for="option in catalogAttributeMappingOption" :value="option.value" :disabled="option.selected"></el-option>
+            </el-select>
+          </el-col>
+          <el-col :span="8">
+            <el-select :clearable="true" v-model="catalogAttributeMapping.vz" placeholder="z velocity" @change="onCatalogAttributeMappingSelect">
+              <el-option  v-for="option in catalogAttributeMappingOption" :value="option.value" :disabled="option.selected"></el-option>
+            </el-select>
+          </el-col>
+        </el-row>
+        <el-row style="width: 100%;">
+          <el-col :span="8">
+            <el-select :clearable="true" v-model="catalogAttributeMapping.speed" placeholder="speed" @change="onCatalogAttributeMappingSelect">
+              <el-option  v-for="option in catalogAttributeMappingOption" :value="option.value" :disabled="option.selected"></el-option>
+            </el-select>
+          </el-col>
+        </el-row>
+
+
       </el-form-item>
 
 
-      <el-form-item v-if="uploadForm.type===uploadDataType.surface" label="Area" prop="type">
+      <el-form-item v-if="uploadForm.type===uploadDataType.surface" label="Area">
         <el-row :gutter="24">
           <el-col :span="11">
             <el-input placeholder="north" v-model="uploadForm.parameters.north" @input="(value)=>{uploadForm.parameters.north = limitNonNumericalValue(value)}"></el-input>
@@ -37,7 +81,7 @@
       </el-form-item>
 
       <el-form-item>
-        <el-upload ref="fileUploadCompRef" :auto-upload="false" @change="(rawFile,list)=>{selectedFile = rawFile}">
+        <el-upload ref="fileUploadCompRef" :auto-upload="false" @change="(rawFile,list)=>{onFileSelect(rawFile,list)}" :on-remove="(uploadFile, uploadFiles)=>{resetFileSelection();resetCatalogAttributeMapping();}">
           <el-button>Select File</el-button>
         </el-upload>
       </el-form-item>
@@ -103,6 +147,94 @@ import {post,get} from "../../js/utils/networkUtil";
 import {isUnAuthed} from "../../js/utils/authUtil";
 import {JUMP_ADDRESS,BACKEND_API} from "../../js/api";
 import {ElMessage} from "element-plus";
+import Papa from 'papaparse';
+
+
+
+
+const catalogAttributeMapping = reactive(
+    {
+      "bv":null,
+      "lum":null,
+      "absMag":null,
+      "vx":null,
+      "vy":null,
+      "vz":null,
+      "speed":null
+    }
+);
+
+
+
+
+
+
+
+const resetFileSelection = ()=>{
+  selectedFile = null;
+  fileUploadCompRef.value.clearFiles();
+}
+
+const updateAttributeMapping = (file)=>{
+
+
+  catalogAttributeMappingOption.length = 0;
+  Papa.parse(file,{
+    workder:true,
+    header:false,
+    step: function(results,parser){
+      const headers = results.data;
+      for(let i = 0;i<headers.length;i++){
+        catalogAttributeMappingOption.push({
+          value:headers[i],
+          selected:false
+        })
+      }
+      parser.abort();
+    }
+  })
+}
+
+
+
+const fileUploadRef = ref(null);
+
+
+const onFileSelect = (file,files)=>{
+
+
+  if (selectedFile!=null){
+    resetCatalogAttributeMapping();
+    files.splice(0,1);
+  }
+  selectedFile = file;
+
+  updateAttributeMapping(getSelectedFile());
+}
+
+
+const catalogAttributeMappingOption=reactive([
+
+])
+
+
+const onCatalogAttributeMappingSelect = (value)=>{
+
+  catalogAttributeMappingOption.forEach((v)=>{
+    const keyList = Object.keys(catalogAttributeMapping)
+    for(let i = 0;i<keyList.length;i++){
+      if (catalogAttributeMapping[keyList[i]] === v.value){
+        v.selected = true;
+        return;
+      }
+    }
+    v.selected = false;
+
+
+  });
+
+}
+
 
 
 const fileUploadFormRef = ref(null);
@@ -129,27 +261,45 @@ const uploadForm = reactive({
   type:-1,
   datasetName:"",
   parameters:{
-    south:null,
-    north:null,
-    east:null,
-    west:null
+    coverage:{
+      north:null,
+      west:null,
+      east:null,
+      south:null,
+    },
+    catalogAttributeMapping:catalogAttributeMapping
   }
 })
+
+
+
+const resetCatalogAttributeMapping = function (){
+
+  const keys = Object.keys(catalogAttributeMapping);
+  for(let i = 0;i<keys.length;i++){
+    uploadForm.parameters.catalogAttributeMapping[keys[i]] = null;
+  }
+
+  catalogAttributeMappingOption.length = 0;
+
+}
 function resetUploadForm(){
   uploadForm.type = -1;
   uploadForm.datasetName = ""
-  uploadForm.parameters.south = null
-  uploadForm.parameters.north = null
-  uploadForm.parameters.east = null
-  uploadForm.parameters.west = null
+  uploadForm.parameters.coverage.south = null
+  uploadForm.parameters.coverage.north = null
+  uploadForm.parameters.coverage.east = null
+  uploadForm.parameters.coverage.west = null
+
+  resetCatalogAttributeMapping();
+
 }
 
 
 function resetUploadFileDialogAndForm(){
   uploadFormDialogShow.value = false;
   resetUploadForm();
-  selectedFile = null;
-  fileUploadCompRef.value.clearFiles();
+  resetFileSelection();
 }
 
 const cancelUploadTask = async function(fileId){
@@ -331,6 +481,9 @@ const startUpload = function (file,fileId,datasetName,chunkSize){
   doUpload(uploadList[uploadList.length-1]);
 }
 const submitUploadForm = async function (){
+
+
+
 
   const datasetName = uploadForm.datasetName;
   let validationResult = false;

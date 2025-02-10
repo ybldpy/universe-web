@@ -3,6 +3,7 @@ import {clamp} from 'three/src/math/mathutils';
 import {Image} from "image-js"
 import {RenderableObject} from '../rendering/base';
 import {commonFunctionsInclude} from "../rendering/common";
+import {appContext} from "../applicationContext";
 
 const utils = {
     clamp:function(value,min,max){
@@ -605,9 +606,11 @@ export class RenderablePlanet extends RenderableObject{
     out vec2 out_uv;
     out vec3 normalVec;
     out vec4 vsPosition;
+    out vec3 vsPositionWorldSpace;
     out float depth;
     out vec4 posCamSpace;
     out vec4 vHeightColor;
+    
     
     
     #ifndef LAYER
@@ -637,7 +640,7 @@ export class RenderablePlanet extends RenderableObject{
     uniform HeightLayer heightLayer;
     uniform mat4 modelTransform;
     
-    
+     
     ${commonFunctionsInclude}
     
     bool isBorder(vec2 uv){
@@ -665,7 +668,7 @@ export class RenderablePlanet extends RenderableObject{
             
             if(uv.x<0.0||uv.x>1.0||uv.y<0.0||uv.y>1.0){
                 // h = h - min(radius, lonLatScalingFactor.y/2.0*1000000.0);
-                h = minHeight*heightMultiplier;
+                h = minHeight - 1e3;
             }
             else {
                 h = texture(heightLayer.tile,vec2(hUv.x,hUv.y)).x;
@@ -682,16 +685,23 @@ export class RenderablePlanet extends RenderableObject{
     
     void main(){
         vec3 pos = getPosition(in_uv);
-        //positionWorldSpace = vec3(modelMatrix * vec4(pos,1.0));
+        vsPositionWorldSpace = vec3(modelMatrix * vec4(pos,1.0));
         posCamSpace = viewMatrix*modelTransform*vec4(pos,1.0);
         gl_Position = projectionMatrix*posCamSpace;
         //gl_Position.z = ((gl_Position.z - 0.1) / (1e20-0.1));
         vsPosition = gl_Position;
         gl_Position.z = 0.0;
         out_uv = in_uv;
+       
     }
-    
     `
+
+
+
+
+
+
+
     static fs = `
     precision highp float;
 
@@ -700,12 +710,16 @@ export class RenderablePlanet extends RenderableObject{
     
     
     
-
+    // in bool isShadow;
+    //in vec3 shadowSourceViewPos;
+    
     in vec2 out_uv;
     in vec3 normalVec;
     in vec4 vsPosition;
     in vec4 posCamSpace;
     in vec4 vHeightColor;
+    in vec3 vsPositionWorldSpace;
+    
     #ifndef LAYER
     #define LAYER
     struct UVTransform{
@@ -719,6 +733,9 @@ export class RenderablePlanet extends RenderableObject{
     };
     #endif
     
+    
+    uniform bool isShadow;
+    uniform vec3 shadowSourceWorldPos;
     
     
     ${commonFunctionsInclude}
@@ -765,20 +782,22 @@ export class RenderablePlanet extends RenderableObject{
         //vec4 color = vec4(vHeight,vHeight,vHeight,1.0);
         gPosition = vec4(posCamSpace.xyz,0.0);
         
-        vec3 dictFromLightToPlanet = normalize(vec3(-1e11,0.0,0.0));
+        vec3 dictFromLightToPlanetSurface = normalize(shadowSourceWorldPos-vsPositionWorldSpace);
+        //dictFromLightToPlanetSurface = -dictFromLightToPlanetSurface;
         
-        
-        float diff = max(dot(dictFromLightToPlanet,normalVec),0.0);
-        vec3 lightColor = vec3(1.0,1.0,1.0) * diff;
-        color *= diff;
+     
+        float diff = max(dot(dictFromLightToPlanetSurface,normalVec),0.0);
+        // vec3 lightColor = vec3(1.0,1.0,1.0) * diff;
         if(chunkEdge&&isBorder(out_uv)){
             color = vec4(1.0,0.0,0.0,1.0);
         }
+        else if(isShadow){
+           color*=diff;
+           //vec3 reflectedLight = reflect(dictFromLightToPlanetSurface,normalVec);
+           //vec4 specular = vec4(1.0)*pow(max(dot(vec3(0.0,0.0,-1.0), reflectedLight), 0.0), 32)*10;
+           //color+=specular;
+        }
         
-        //color = mix(color,vHeightColor,0.5);
-        
-        
-        // col = vec4(1.0,0.0,0.0,1.0);
         fragColor = color;
     }
     `
@@ -791,10 +810,15 @@ export class RenderablePlanet extends RenderableObject{
 
     static DEFAULT_MAX_LEVEL = 13;
     static DEFAULT_MIN_LEVEL = 1;
-    constructor(params = {radius:10,layers:[]}){
+    constructor({radius = 10,layers = [], shadow = {}} = {}){
         super();
+        shadow = {
+            isShadow: shadow.isShadow ?? false,
+            shadowSource: shadow.shadowSource ?? null
+        }
 
-        this.radius = params.radius;
+
+        this.radius = radius;
         this.root = new Chunk(-90,90,-180,180,new TileIndex(0,0,0));
         this.grid = RenderablePlanet.RENDER_GRID;
         this.maxLevel = RenderablePlanet.DEFAULT_MAX_LEVEL;
@@ -810,8 +834,10 @@ export class RenderablePlanet extends RenderableObject{
         //this.colorTileProvider = new TileProvider("https://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",this.maxLevel)
         //this.setTileProvider("https://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",this.maxLevel,scene)
         this.initLayers();
-        params.layers.forEach(layer=>this.addLayer(layer));
-        this.initProps();
+        layers.forEach(layer=>this.addLayer(layer));
+        this.initProps(shadow);
+
+
     }
     initLayers(){
         let defaultTileProvider = new TileProvider("",this.maxLevel);
@@ -820,12 +846,17 @@ export class RenderablePlanet extends RenderableObject{
     }
 
 
-    initProps(){
+    initProps(shadow){
 
         this.props = {
             heightMultiplier:this.heightMultiplier,
             chunkEdge:false,
-            heightOffset:0
+            heightOffset:0,
+            shadow:{
+                isShadow:shadow.isShadow,
+                shadowSource:shadow.shadowSource,
+                shadowSourceWorldPos: new THREE.Vector3()
+            }
         }
     }
 
@@ -858,7 +889,9 @@ export class RenderablePlanet extends RenderableObject{
                     }
                 }
             },
-            modelTransform:{value:new THREE.Matrix4()}
+            modelTransform:{value:new THREE.Matrix4()},
+            isShadow:{value:false},
+            shadowSourceWorldPos:{value:this.props.shadow.shadowSourceWorldPos}
         }
     }
 
@@ -869,6 +902,7 @@ export class RenderablePlanet extends RenderableObject{
         layersUI.add(this.props,"heightMultiplier",1,100000,2)
         uiComponent.add(this.props,"chunkEdge",false)
         uiComponent.add(this.props,"heightOffset",-1000000,1000000,1)
+        uiComponent.add(this.props.shadow,"isShadow");
     }
 
     getGlobalShader(){
@@ -1087,56 +1121,6 @@ export class RenderablePlanet extends RenderableObject{
 
         }
 
-        // if(chunk.isLeaf()){
-        //     if(canBeCulled){chunk.status = Chunk.STATUS.wantMerge;return;}
-        //     // const leafTileAvailable = chunk.tilePile.tileCurrentLevel!=null && chunk.tilePile.tileCurrentLevel.status==Tile.STATUS.available;
-        //     const tileIndex = chunk.tileIndex;
-        //     if(tileIndex.level>dl){
-        //         chunk.status = Chunk.STATUS.wantMerge;
-        //         return;
-        //     }
-        //     let leafTileAvailable = false;
-        //     for(let i=0;i<this.layers.length;i++){
-        //         // download tile if tile is not available
-        //         leafTileAvailable = leafTileAvailable || this.layers[i].getTile(chunk.tileIndex).status == Tile.STATUS.available;
-        //     }
-        //     if(tileIndex.level<dl&&leafTileAvailable){
-        //         const tileAvailableState = Tile.STATUS.available;
-        //         let canSplit = false;
-        //         for(let i=0;i<this.layers.length;i++){
-        //             const childTile00 = this.layers[i].getTile(tileIndex.nextLevelIndex(TileIndex.DIRECTION.NORTH,TileIndex.DIRECTION.WEST));
-        //             const childTile10 = this.layers[i].getTile(tileIndex.nextLevelIndex(TileIndex.DIRECTION.NORTH,TileIndex.DIRECTION.EAST));
-        //             const childTile01 = this.layers[i].getTile(tileIndex.nextLevelIndex(TileIndex.DIRECTION.SOUTH,TileIndex.DIRECTION.WEST));
-        //             const childTile11 = this.layers[i].getTile(tileIndex.nextLevelIndex(TileIndex.DIRECTION.SOUTH,TileIndex.DIRECTION.EAST));
-        //             const tileAvailableState = Tile.STATUS.available;
-        //             canSplit = canSplit || childTile00.status==tileAvailableState || childTile10.status == tileAvailableState || childTile01.status == tileAvailableState || childTile11.status == tileAvailableState;
-        //             // canSplit = canSplit || childTile00;
-        //         }
-
-        //         if(canSplit){
-        //             this.splitChunk(chunk);
-        //         }
-        //         chunk.status = Chunk.STATUS.doNothing;
-        //     }
-
-        // }
-        // else {
-        //     if(canBeCulled){
-        //         //this.mergeChunk(chunk,scene);
-        //         chunk.status = Chunk.STATUS.wantMerge;
-        //         return;
-        //     }
-
-        //     let allChildrenWantMerge = true;
-        //     for(let i=0;i<chunk.children.length;i++){
-        //         this.updateChunkTree(chunk.children[i],camera,scene);
-        //         allChildrenWantMerge = allChildrenWantMerge&&(chunk.children[i].status==Chunk.STATUS.wantMerge);
-        //     }
-        //     if(allChildrenWantMerge){
-        //         this.mergeChunk(chunk,scene);
-        //     }
-        //     else {chunk.status = chunk.tileIndex.level > dl?Chunk.STATUS.wantMerge:Chunk.STATUS.doNothing;}
-        // }
     }
 
     calDesiredLevel(chunk,renderData){
@@ -1243,9 +1227,7 @@ export class RenderablePlanet extends RenderableObject{
         //uniforms.chunkEdge.value = ui.chunkEdge;
         uniforms.modelTransform.value = renderData.modelTransform;
         uniforms.chunkEdge.value = this.props.chunkEdge;
-
-
-
+        uniforms.isShadow.value = this.props.shadow.isShadow;
         this.setLayerUniforms(this.heightLayer,chunk,uniforms,"heightLayer");
         this.setLayerUniforms(this.colorLayer,chunk,uniforms,"colorLayer");
 
@@ -1285,22 +1267,14 @@ export class RenderablePlanet extends RenderableObject{
             }
             uniforms.childIndexColor.value.copy(idxColor);
         }
-        // uniforms.colorTilePile.value.tileLastLevel.texture = chunk.tilePile.tileLastLevel.texture;
-        // uniforms.colorTilePile.value.tileLastLevel.uvTransform.uvOffset = chunk.tilePile.tileLastLevelUVTransform[0];
-        // uniforms.colorTilePile.value.tileLastLevel.uvTransform.uvScale = chunk.tilePile.tileLastLevelUVTransform[1];
-        // uniforms.colorTilePile.value.tileCurrentLevel.texture = chunk.tilePile.tileCurrentLevel.texture;
-        // uniforms.colorTilePile.value.tileCurrentLevel.uvTransform.uvOffset = chunk.tilePile.tileCurrentLevelUVTransform[0];
-        // uniforms.colorTilePile.value.tileCurrentLevel.uvTransform.uvScale = chunk.tilePile.tileCurrentLevelUVTransform[1];
-        // uniforms.currentLevelWeight.value = chunk.tilePile.tileCurrentLevel.status==Tile.STATUS.available?1:0;
     }
 
     createSurface(chunk){
-
         const mesh = new THREE.Mesh(this.grid.getBufferGeometry(),this.getGlobalShader());
         mesh.frustumCulled = false;
-
         return mesh;
     }
+
 
 
     renderChunk(chunk,renderData,i){
@@ -1313,10 +1287,8 @@ export class RenderablePlanet extends RenderableObject{
         //chunk.surface.material.wireframe = ui.wireFrame;
         //console.log(ui.wireFrame);
         this.setUniforms(chunk,renderData,i);
-
         // const gl = renderer.getContext();
         // this.activeShaderProgram(gl);
-
         // gl.uniformMatrix4fv(gl.getUniformLocation(this.shaderProgram,"projectionMatrix"),false,camera.projectionMatrix);
         // gl.uniformMatrix4fv(gl.getUniformLocation(this.shaderProgram,"modelViewMatrix"),)
 
@@ -1328,9 +1300,27 @@ export class RenderablePlanet extends RenderableObject{
     }
 
 
+    // update(updateData){
+    //
+    //
+    //     this.updateShadowSourceWorldPosition();
+    // }
+
+
+
+
+    updateShadowSourceWorldPosition(){
+        if (this.props.shadow.isShadow && this.props.shadow.shadowSource!==null){
+            const shadowSourceNode = appContext.scene.findNodeByIdentifier(this.props.shadow.shadowSource);
+            if (shadowSourceNode){
+                this.props.shadow.shadowSourceWorldPos.copy(shadowSourceNode.getLocalPosition());
+            }
+        }
+    }
 
     render(renderData){
         this.updateChunkTree(this.root,renderData);
+        this.updateShadowSourceWorldPosition();
         const renderedChunkList = [];
         this.getRenderedChunks(this.root,renderedChunkList,renderData.scene);
         for(let i=0;i<renderedChunkList.length;i++){

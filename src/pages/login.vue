@@ -12,7 +12,7 @@
       </el-form-item>
 
       <el-form-item label="Password" prop="password" :label-position="labelPosition" :show-message="true">
-        <el-input v-model='formData.password'></el-input>
+        <el-input type="password" v-model='formData.password'></el-input>
       </el-form-item>
 
       <el-form-item>
@@ -25,7 +25,7 @@
       </el-form-item>
 
       <div class="form-footer">
-        <a href="#" @click.prevent="onSignUp">Sign up</a>
+        <a href="/register.html">Sign up</a>
       </div>
 
     </el-form>
@@ -38,8 +38,9 @@ import { reactive,ref} from 'vue'
 import {ElMessage} from "element-plus";
 
 import axios from 'axios';
-import {SERVER_ADDRESS} from "../commons/config";
-import {tokenKey} from "../commons/constants";
+import {SERVER_ADDRESS} from "../js/commons/config";
+import {tokenKey} from "../js/commons/constants";
+import {BACKEND_API, JUMP_ADDRESS} from "../js/api";
 
 const loginFormRef = ref(null)
 const submitBtn = ref(null)
@@ -61,7 +62,7 @@ const formValidationRules =
   }
 
 
-const logInUrl = `${SERVER_ADDRESS}/user/login`
+const logInUrl = BACKEND_API.LOG_IN
 const logging = ref(false)
 
 // do not use same name with ref
@@ -86,17 +87,16 @@ const signIn = async function(logInFormData){
       ElMessage.error(response.data.msg)
     }
     else if (response.data.data.status!=1){
-      ElMessage.error(response.data.data.msg);
+      ElMessage.warning(response.data.data.msg);
     }
     else {
       const token = response.data.data.token;
       localStorage.setItem(tokenKey,token);
-      const jumpAddress = "/digitalUniverse.html"
-      window.location.href = jumpAddress;
+      window.location.href = JUMP_ADDRESS.UNIVERSE;
     }
   }
   catch (error){
-
+    ElMessage.error(error)
   }
   finally {
     logging.value = false

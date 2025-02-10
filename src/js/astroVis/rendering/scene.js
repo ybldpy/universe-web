@@ -79,19 +79,11 @@ export class SceneGraphNodeFactory{
         let scaling = new THREE.Vector3(transfomation[2][0],transfomation[2][1],transfomation[2][2]);
         const renderable = nodeParams.renderableObject;
         let renderableObject = null;
-        let reachRadius = nodeParams.reachRadius;
+        let reachRadius = nodeParams.reachRadius??10;
         if (renderable != undefined && renderable != null){
-            // const radius = renderable.radius;
-            // const layers = [];
-            // if (renderable.layers != undefined && renderable.layers != null){
-            //     renderable.layers.forEach((l)=>{layers.push(l)});
-            // }
-            // renderableObject = new RenderablePlanet({radius: radius,layers: layers});
             const type = RENDERABLE_OBJECT_TYPES[renderable["type"]]
-            if (type===undefined){return null}
-
+            if (type===undefined){return null;}
             renderableObject = new type(renderable["params"])
-
         }
         const sceneGraphNode = new SceneGraphNode({
             identifier:identifier,
@@ -134,7 +126,7 @@ export class SceneGraphNode{
 
 
 
-    addUIComponent(uiComponent){
+    setupUI(uiComponent){
         this.ui = uiComponent
         if (this.renderableObject!=null){
             const childUI = this.ui.addFolder("renderableObject")
@@ -153,8 +145,10 @@ export class SceneGraphNode{
 
     //return the position relative to focus node
     getLocalPosition(){
-        return this.localPosition;
+        return this.localPosition.clone();
     }
+
+
 
     calcLocalPosition(){
         const focusNode = appContext.navigator.orbitNavigator.getFocusNode();
@@ -164,7 +158,6 @@ export class SceneGraphNode{
         const worldPos = this.getWorldPosition().clone();
         const focusNodeWorldPos = focusNode.getWorldPosition();
         this.localPosition = worldPos.applyMatrix4(new THREE.Matrix4().makeTranslation(focusNodeWorldPos.x,focusNodeWorldPos.y,focusNodeWorldPos.z).invert());
-
     }
 
     addChild(node){
@@ -182,10 +175,10 @@ export class SceneGraphNode{
         return this.worldPosition;
     }
     getWorldRotation(){
-        return this.worldRotation;
+        return this.worldRotation.clone();
     }
     getWorldScaling(){
-        return this.worldScaling;
+        return this.worldScaling.clone();
     }
     addChild(node){
         this.childrenNodes.push(node);
@@ -218,7 +211,7 @@ export class SceneGraphNode{
     }
     calcModelTransform(){
         const localPos = this.getLocalPosition();
-        this.modelTransformionCached.makeTranslation(localPos,localPos.y,localPos.z).
+        this.modelTransformionCached.makeTranslation(localPos.x,localPos.y,localPos.z).
         multiply(this.scalingMat.makeScale(this.worldScaling.x,this.worldScaling.y,this.worldScaling.z)).multiply(this.worldRotation);
     }
     getModelTransform(){
@@ -241,6 +234,8 @@ export class SceneGraphNode{
     }
     render(renderData,deferRenderingTaskQueue){
         if(this.renderableObject==null){return;}
+        renderData.transformation = new Transformation(this.getLocalPosition(),this.getWorldRotation(),this.getWorldScaling());
+        renderData.modelTransform = this.getModelTransform();
         this.renderableObject.render(renderData,deferRenderingTaskQueue);
     }
 }
@@ -298,9 +293,8 @@ export class Scene{
         const nodesUpdateList = [this.nodes.root];
         while(nodesUpdateList.length > 0){
             const node = nodesUpdateList.shift();
-            const renderData = new RenderData(new Transformation(node.getLocalPosition(),node.getWorldRotation(),node.getWorldScaling()),node.getModelTransform(),camera,scene);
+            const renderData = new RenderData(null,null,camera,scene);
             node.render(renderData,deferRenderingTaskQueue);
-            // console.log(camera);
             node.childrenNodes.forEach((node)=>{nodesUpdateList.push(node)})
         }
     }

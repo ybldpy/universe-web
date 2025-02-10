@@ -2,7 +2,7 @@ import * as THREE from "three";
 import {RenderEngine} from "./rendering/renderEngine";
 import {Scene, SceneGraphNode, SceneGraphNodeFactory} from "./rendering/scene";
 import {
-    planets,
+    defaultAssets,
     createStarsTestNode,
     createOrbitTestNode,
     createSolarSystemPlantsOrbitNode
@@ -16,6 +16,8 @@ import {Timer} from "three/addons/misc/Timer.js";
 import {appContext} from "./applicationContext";
 import * as dat from 'dat.gui';
 import Stats from 'stats.js';
+import {AssetManager} from "./manage/assetManage";
+import {BACKEND_API,PARAMETERS} from "../api";
 
 class App{
 
@@ -32,44 +34,45 @@ class App{
         this.camera.position.set(0,0,6000e5);
         this.camera.lookAt(0,0,0);
         this.ui = new dat.GUI();
-        appContext["gui"] = this.ui
+        appContext["gui"] = {
+            "root": this.ui,
+            "scene": this.ui.addFolder("scene"),
+        }
         this.navigator = new Navigator(this.camera,new InteractionHandler(webGlRender.domElement));
+
         appContext.navigator = this.navigator;
+        this.assetManager = new AssetManager();
+
+        this.assetManager.loadAssets(defaultAssets(),this.scene);
+        this.assetManager.loadUserAssets(BACKEND_API.FILE_QUERYALL,{status:PARAMETERS.FILE.STATUS.READY},this.scene);
 
         const sceneGraphNode = new SceneGraphNode({identifier:"galaxy"});
         sceneGraphNode.parentNode = this.scene.findNodeByIdentifier("root");
-        // sceneGraphNode.renderableObject = new RenderableBackgroundSphere(1e20,"/data/eso_dark.jpg");
-        this.scene.addNode(sceneGraphNode);
-        // this.scene.addNode(createOrbitTestNode());
-        this.scene.addNode(createStarsTestNode("stars","speck","/data/stars/stars.speck","",4.0));
-        this.scene.addNode(createStarsTestNode("Gaia","streamOctree","/data/stars/octree/index.json","/data/stars/octree",5.0))
-        this.scene.addNode(createStarsTestNode("LAMOST","streamOctree","/data/stars/octree_LA/index.json","/data/stars/octree_LA",6.0))
-        planets.forEach((i)=>{this.addGraphNode(i);});
+        sceneGraphNode.renderableObject = new RenderableBackgroundSphere(1e20,"/data/eso_dark.jpg");
+        this.scene.addNode(createStarsTestNode("stars","speck","/data/stars/stars.speck",4.0));
+        // this.scene.addNode(createStarsTestNode("Gaia","streamOctree","/data/stars/octree",5.0))
+        // this.scene.addNode(createStarsTestNode("LAMOST","streamOctree","/data/stars/octree_LA",6.0))
         createSolarSystemPlantsOrbitNode().forEach((node)=>{
             this.scene.addNode(node)
         });
-        //this.controls = new OrbitControls(camera,webGlRender.domElement);
-
         this.navigator.orbitNavigator.setFocusNode(this.scene.findNodeByIdentifier("earth"));
         this.timer = new Timer();
-        this.stat = new Stats()
-        document.body.appendChild(this.stat.dom)
+        this.stat = new Stats();
+        document.body.appendChild(this.stat.dom);
         this.initUI();
+
+
     }
 
     initUI(){
-
-
-
-
         const nodeIds = [];
-        const sceneFolder = this.ui.addFolder("scene")
+
         this.scene.getAllNodes().forEach(node=>{
-            const nodeUI = sceneFolder.addFolder(node.getIdentifier())
-            node.addUIComponent(nodeUI)
-           if (node.renderableObject!=null){
+            // const nodeUI = sceneFolder.addFolder(node.getIdentifier());
+            // node.setupUI();
+            if (node.renderableObject!=null){
                nodeIds.push(node.getIdentifier());
-           }
+            }
         });
         const focus = {
             focusNode:this.navigator.orbitNavigator.getFocusNode().getIdentifier()
@@ -78,6 +81,12 @@ class App{
             const nextFocusNode = this.scene.findNodeByIdentifier(value);
             this.navigator.pathNavigator.flyTo(nextFocusNode,this.camera);
         });
+
+        this.ui.add({jumpToDataManagement:()=>{
+            window.location.href = "/dataManagement.html"
+            }}, 'jumpToDataManagement').name('Go to upload data');
+
+
     }
 
 
@@ -103,7 +112,7 @@ class App{
 }
 
 
-const renderer = new THREE.WebGLRenderer({logarithmicDepthBuffer:true});
+const renderer = new THREE.WebGLRenderer({logarithmicDepthBuffer:true,antialias:false});
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 const camera = new THREE.PerspectiveCamera( 35, window.innerWidth / window.innerHeight, 1, 1e25 );

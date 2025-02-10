@@ -176,7 +176,7 @@ class OrbitNavigator{
     }
 
     updateCamera(camera,deltaTime,interactionHandler){
-        deltaTime = Math.min(deltaTime,0.01);
+        deltaTime = Math.min(deltaTime,0.1);
         this.rotate(camera,deltaTime,this.focusNode,interactionHandler);
         this.pushToSurface(camera,deltaTime,this.focusNode,interactionHandler);
     }

@@ -95,14 +95,14 @@ class DataLoader{
         const speedBuffer = []
         const littleEndian = true;
         const dataView = new DataView(arrayBuffer)
-        const step = 17*4;
+        const step = 10*4;
         const size = 4;
         for (let i = 0;i<arrayBuffer.byteLength;i+=step){
             const offset = i
             positionBuffer.push(dataView.getFloat32(offset,littleEndian),dataView.getFloat32(offset+size,littleEndian),dataView.getFloat32(offset+2*size,littleEndian))
             bvLumAbsMagBuffer.push(dataView.getFloat32(offset+3*size,littleEndian),dataView.getFloat32(offset+4*size,littleEndian),dataView.getFloat32(offset+5*size,littleEndian))
-            velocityBuffer.push(dataView.getFloat32(offset+13*size,littleEndian),dataView.getFloat32(offset+14*size,littleEndian),dataView.getFloat32(offset+15*size,littleEndian))
-            speedBuffer.push(dataView.getFloat32(offset+16*size,littleEndian))
+            velocityBuffer.push(dataView.getFloat32(offset+6*size,littleEndian),dataView.getFloat32(offset+7*size,littleEndian),dataView.getFloat32(offset+8*size,littleEndian))
+            speedBuffer.push(dataView.getFloat32(offset+9*size,littleEndian))
         }
 
         return new StarDataBuffer({positions:positionBuffer,bvLumAbsMag:bvLumAbsMagBuffer,velocity:velocityBuffer,speed:speedBuffer});
@@ -314,22 +314,20 @@ class OctreeNode{
         this.dataLoading = true
         dataLoader.load(this.downloadUrl,DataLoader.DATA_SOURCE_FORMAT.STREAM_OCTREE,(starDataBuffer)=>{
             this.loadFail = false;
-            const litterEndian = true
-            this.dataLoading = false
-            normalizeVelocity(starDataBuffer.getVelocity())
-            const arraybuffers = createBillboardBuffer(starDataBuffer)
-            this.setGeometryBuffer(arraybuffers[RenderableStars.SHADER_IN_ATTRIBUTE_NAME.position],arraybuffers[RenderableStars.SHADER_IN_ATTRIBUTE_NAME.bvLumAbsMag],arraybuffers[RenderableStars.SHADER_IN_ATTRIBUTE_NAME.velocity],arraybuffers[RenderableStars.SHADER_IN_ATTRIBUTE_NAME.speed],arraybuffers[RenderableStars.SHADER_IN_ATTRIBUTE_NAME.vUV],arraybuffers[RenderableStars.SHADER_IN_ATTRIBUTE_NAME.corner])
+            const litterEndian = true;
+            this.dataLoading = false;
+            normalizeVelocity(starDataBuffer.getVelocity());
+            const arraybuffers = createBillboardBuffer(starDataBuffer);
+            this.setGeometryBuffer(arraybuffers[RenderableStars.SHADER_IN_ATTRIBUTE_NAME.position],arraybuffers[RenderableStars.SHADER_IN_ATTRIBUTE_NAME.bvLumAbsMag],arraybuffers[RenderableStars.SHADER_IN_ATTRIBUTE_NAME.velocity],arraybuffers[RenderableStars.SHADER_IN_ATTRIBUTE_NAME.speed],arraybuffers[RenderableStars.SHADER_IN_ATTRIBUTE_NAME.vUV],arraybuffers[RenderableStars.SHADER_IN_ATTRIBUTE_NAME.corner]);
             // this.createPointDrawIndex(Math.floor(starDataBuffer.getPositions().length/3))
             if (this.pointDrawIndex.length <1){
-                this.pointDrawIndex = createBillboardDrawIndex(Math.floor(starDataBuffer.getPositions().length/3))
+                this.pointDrawIndex = createBillboardDrawIndex(Math.floor(starDataBuffer.getPositions().length/3));
             }
-            this.meshPoint.geometry.setIndex(this.pointDrawIndex)
-            this.dataLoaded = true
-            this.dataLoading = false
-        },(e)=>{this.loadFail = true;this.dataLoading = false})
-        fetch(this.downloadUrl).then(response=>response.arrayBuffer(),error=>{this.loadFail = true;this.dataLoading = false}).then((buffer)=>{
+            this.meshPoint.geometry.setIndex(this.pointDrawIndex);
+            this.dataLoaded = true;
+            this.dataLoading = false;
+        },(e)=>{this.loadFail = true;this.dataLoading = false});
 
-        })
     }
 
     isLeaf(){
@@ -568,7 +566,7 @@ export class RenderableStars extends RenderableObject {
 
 
 
-    constructor({dataFormat = "speck",magExponent=1,requestUrl,requestUrlPrefix = ""}) {
+    constructor({dataFormat = "speck",magExponent=1,requestUrl}) {
         super();
 
 
@@ -587,7 +585,7 @@ export class RenderableStars extends RenderableObject {
         this.streamOctreeDataSource = dataFormat === DataLoader.DATA_SOURCE_FORMAT.STREAM_OCTREE
         this.initGL();
         this.dataLoader = new DataLoader()
-        this.loadStars(dataFormat,requestUrl,requestUrlPrefix)
+        this.loadStars(dataFormat,requestUrl)
         this.loadColorMap("/data/stars/colorbv.cmap")
         this.octree = null
         this.visibleNodes = []
@@ -599,15 +597,15 @@ export class RenderableStars extends RenderableObject {
     addUIComponent(uiComponent){
         uiComponent.add(this.prop,"magExponent",1,20);
         uiComponent.add(this.prop,"visible");
-        uiComponent.add(this.prop,"renderColorOption",["bv","velocity"]).onChange((value)=>{
+        uiComponent.add(this.prop,"renderColorOption",["bv","velocity","speed"]).onChange((value)=>{
             this.shaderMaterial.uniforms.renderColorOption.value = this.renderColorOptionMap[value]
         })
     }
 
 
-    createOctreeFromIndex(requestUrl,nodeRequestUrlPrefix){
-        fetch(requestUrl).then(response=>response.json()).then((json)=>{
-            this.octree = new Octree(json,this.shaderMaterial,nodeRequestUrlPrefix)
+    createOctreeFromIndex(requestUrl){
+        fetch(`${requestUrl}/index.json`).then(response=>response.json()).then((json)=>{
+            this.octree = new Octree(json,this.shaderMaterial,requestUrl)
         })
     }
 
@@ -646,7 +644,7 @@ export class RenderableStars extends RenderableObject {
     initGL(){
 
         this.kpcScale = 1e12
-        this.starBase = new THREE.Object3D();
+        this.starBase = new THREE.Group();
         this.shaderMaterial = new THREE.ShaderMaterial({
             version:THREE.GLSL3,
             fragmentShader:RenderableStars.fs,
@@ -657,7 +655,7 @@ export class RenderableStars extends RenderableObject {
                 [this.COLOR_MAP_TEXTURE_NAME]:{value:this.COLOR_MAP_TEXTURE},
                 cameraUp:{value:new THREE.Vector3(0,1,0)},
                 magExponent:{value:1.0},
-                renderColorOption:{value:this.renderColorOptionMap.bv}
+                renderColorOption:{value:this.renderColorOptionMap.bv},
             },
             transparent:true,
             //depthTest: false,
@@ -666,7 +664,7 @@ export class RenderableStars extends RenderableObject {
             side:THREE.DoubleSide
         })
         this.mesh = new THREE.Mesh()
-        this.mesh.material = this.shaderMaterial
+        this.mesh.material = this.shaderMaterial;
         this.mesh.frustumCulled = false
         this.starBase.add(this.mesh)
         this.starBase.renderOrder = 1;
@@ -697,14 +695,14 @@ export class RenderableStars extends RenderableObject {
         });
     }
 
-    loadStars(dataFormat,requestUrl,requreUrlPrefix){
+    loadStars(dataFormat,requestUrl){
 
         dataFormat = dataFormat.toLowerCase()
         if (dataFormat === DataLoader.DATA_SOURCE_FORMAT.SPECK.toLowerCase()){
             this.loadStarsFromSpeck(requestUrl)
         }
         else if (dataFormat === DataLoader.DATA_SOURCE_FORMAT.STREAM_OCTREE.toLowerCase()){
-            this.createOctreeFromIndex(requestUrl,requreUrlPrefix)
+            this.createOctreeFromIndex(requestUrl)
         }
 
     }
@@ -846,13 +844,12 @@ export class RenderableStars extends RenderableObject {
     render(renderData) {
         
         if (this.init){
-
             renderData.scene.add(this.starBase);
             this.init = false;
         }
         else if (this.octree!=null){
 
-            const visibleNodes = this.findVisibleNode(renderData.camera,this.octree,renderData.transformation.translation);
+            const visibleNodes = this.findVisibleNode(renderData.camera,this.octree,renderData.transformation.translation.clone());
             const notVisibleNodes = this.visibleNodes.filter((n)=>{
                 for(let i = 0;i<visibleNodes.length;i++){
                     delete this.notVisibleNodes[visibleNodes[i].requestUrlIndex]
@@ -860,7 +857,7 @@ export class RenderableStars extends RenderableObject {
                         return false;
                     }
                 }
-                return true
+                return true;
             })
             const current = Math.floor(Date.now()/1000)
             notVisibleNodes.forEach((node)=>{
@@ -880,23 +877,15 @@ export class RenderableStars extends RenderableObject {
                     node.downloadData(this.dataLoader)
                 }
             }
-
         }
 
 
-        this.shaderMaterial.uniforms.kpc.value = 1e12
+        this.shaderMaterial.uniforms.kpc.value = 1e12;
         this.shaderMaterial.uniforms.magExponent.value = this.prop.magExponent
         const translation = renderData.transformation.translation;
-        // new THREE.Camera().getWorldDirection()
-        const up = new THREE.Vector3(0,1,0)
-        up.applyQuaternion(renderData.camera.quaternion)
-        //new THREE.Camera().quaternion
-        this.mesh.material.uniforms.cameraUp.value = up
-        // this.starBase.translateZ()
+        const up = new THREE.Vector3(0,1,0);
+        up.applyQuaternion(renderData.camera.quaternion);
         this.starBase.position.set(translation.x,translation.y,translation.z);
-        //this.starBase.children.forEach((c)=>c.position.set(translation.x,translation.y,translation.z))
-
-
     }
 
 

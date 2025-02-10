@@ -1,9 +1,8 @@
 
 import {createRouter, createWebHashHistory, createWebHistory} from "vue-router";
-import UploadedDataManagement from "../../pages/dataManagement/management.vue"
-import DataUpload from "../../pages/dataManagement/dataUpload.vue"
-import DataManagement from "../../pages/dataManagement.vue";
-
+import UploadedDataManagement from "../dataManagement/management.vue"
+import DataUpload from "../dataManagement/dataUpload.vue"
+import DataManagement from "../dataManagement.vue";
 
 
 const routes = [

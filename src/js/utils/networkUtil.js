@@ -1,5 +1,5 @@
 import axios from "axios";
-import {tokenKey} from "../../commons/constants";
+import {tokenKey} from "../commons/constants";
 
 
 

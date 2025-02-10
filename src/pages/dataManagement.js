@@ -2,8 +2,8 @@ import {createApp} from "vue";
 import 'element-plus/dist/index.css'
 import DataManagementRouter from "./router/dataManagementRouter";
 import DataManagement from "../pages/dataManagement.vue";
-import {checkTokenValidation} from "./utils/authUtil";
-import {LOGIN_ADDRESS} from "../commons/config";
+import {checkTokenValidation} from "../js/utils/authUtil";
+import {LOGIN_ADDRESS} from "../js/commons/config";
 
 
 if (!checkTokenValidation()){

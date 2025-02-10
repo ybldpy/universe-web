@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import {RenderableObject} from "../rendering/base";
 import {NEAR_PLANE,FAT_PLANE} from "../rendering/common";
+import {appContext} from "../applicationContext";
 
 export class PlanetAtmosphere extends RenderableObject{
 
@@ -198,7 +199,7 @@ export class PlanetAtmosphere extends RenderableObject{
         vec4 gPos = texture2D(gPositionTexture,vUV);
         vec3 worldPos = vec3(0.0);
         if(gPos.w>0.0){worldPos = worldFromUV(vUV,1.0);}
-        
+        //worldPos = worldFromUV(vUV,1.0);
         else {worldPos = vec3(inverseView * vec4(gPos.xyz,1.0));}
         vec3 deepestPoint = worldPos - cameraPos;
         
@@ -233,6 +234,12 @@ export class PlanetAtmosphere extends RenderableObject{
         super()
         this.radius = radius;
         this.atmosphere = null;
+        this.props = {
+            fallOff:falloff,
+            sunIntensity:intensity,
+            scatteringStrength:scatteringStrengh,
+            density:density,
+        }
         this.shader = new THREE.ShaderMaterial({
             vertexShader:PlanetAtmosphere.vs,
             fragmentShader:PlanetAtmosphere.fs3,
@@ -241,7 +248,7 @@ export class PlanetAtmosphere extends RenderableObject{
             uniforms:{
                 gPositionTexture:{value:null},
                 screenColorTexture:{value:null},
-                sunPosition:{value:new THREE.Vector3(-1e11,0.0,0.0)},
+                sunPosition:{value:new THREE.Vector3(0.0,0.0,0.0)},
                 cameraPos:{value:new THREE.Vector3()},
                 inverseProjection:{value:new THREE.Matrix4()},
                 inverseView:{value:new THREE.Matrix4()},
@@ -269,6 +276,17 @@ export class PlanetAtmosphere extends RenderableObject{
     }
 
 
+
+    addUIComponent(uiComponent) {
+        const keys = Object.keys(this.props);
+        for(let i = 0;i<keys.length;i++){
+            uiComponent.add(this.props,keys[i])
+        }
+    }
+
+
+
+
     render(renderData,postProcessShaderQueue){
         const uniforms = this.shader.uniforms;
         const camera = renderData.camera;
@@ -278,6 +296,10 @@ export class PlanetAtmosphere extends RenderableObject{
         uniforms.inverseView.value.copy(camera.matrixWorldInverse.clone().invert());
         uniforms.cameraNear.value = 0.1
         uniforms.cameraFar.value = 1e15;
+        uniforms.scatteringStrength.value = this.props.scatteringStrength;
+        uniforms.falloffFactor.value = this.props.fallOff;
+        uniforms.sunIntensity.value = this.props.sunIntensity;
+        uniforms.densityModifier.value = this.props.density;
         const translation = renderData.transformation.translation;
         uniforms.planetPosition.value.set(translation.x,translation.y,translation.z)
         // uniforms.sunIntensity.value = atmosphereUI.intensity;
@@ -287,6 +309,10 @@ export class PlanetAtmosphere extends RenderableObject{
         // uniforms.redWaveLength.value = atmosphereUI.redWave;
         // uniforms.blueWaveLength.value = atmosphereUI.blueWave;
         // uniforms.greenWaveLength.value = atmosphereUI.greenWave;
+
+
+        const sunPosition = appContext.scene.findNodeByIdentifier("sun").getLocalPosition();
+        this.shader.uniforms.sunPosition.value.set(sunPosition.x,sunPosition.y,sunPosition.z);
         postProcessShaderQueue.push(this.shader);
     }
 }
