@@ -6,7 +6,7 @@ Currently, we support uploading customized star catalog datasets in CSV format f
 
 Layer uploading is also coming soon, allowing users to visualize their own terrain, surface, and other planetary data, such as Earth’s and Moon's features.
 
-Visit our website at http://121.40.212.118/ to explore the system.
+Visit our website at http://121.40.212.118:5000/ to explore the system.
 
 ![image-20250211115756894](readmeImages/image-20250211115756894.png)
 
