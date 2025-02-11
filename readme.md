@@ -8,12 +8,12 @@ Layer uploading is also coming soon, allowing users to visualize their own terra
 
 Visit our website at http://121.40.212.118/ to explore the system.
 
-![image-20250211115756894](C:\Users\acer\AppData\Roaming\Typora\typora-user-images\image-20250211115756894.png)
+![image-20250211115756894](readmeImages/image-20250211115756894.png)
 
-![image-20250211122116987](C:\Users\acer\AppData\Roaming\Typora\typora-user-images\image-20250211122116987.png)
+![image-20250211122116987](readmeImages/image-20250211122116987.png)
 
-![image-20250211122005030](C:\Users\acer\AppData\Roaming\Typora\typora-user-images\image-20250211122005030.png)
+![image-20250211122005030](readmeImages/image-20250211122005030.png)
 
 
 
-![image-20250211122212990](C:\Users\acer\AppData\Roaming\Typora\typora-user-images\image-20250211122212990.png)
+![image-20250211122212990](readmeImages/image-20250211122212990.png)
