@@ -130,7 +130,7 @@ class OrbitNavigator{
             return;
         }
         this.focusNode = focusNode;
-        appContext.scene.onFocusNodeChange();
+        appContext.scene.onFocusNodeChange(appContext.camera);
         const camera = appContext.camera;
         //initializing
         if (lastFocusNode == null){

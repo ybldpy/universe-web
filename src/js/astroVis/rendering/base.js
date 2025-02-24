@@ -17,8 +17,9 @@ export class Transformation{
     }
 }
 export class UpdateData{
-    constructor(transformation){
+    constructor(transformation,camera){
         this.transformation = transformation;
+        this.camera = camera;
     }
 }
 export class RenderData{

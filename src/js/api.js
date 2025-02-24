@@ -15,7 +15,8 @@ export const BACKEND_API = {
     FILE_UPLOAD_CREATE: `${prefix}/file/createFileUploadTask`,
     FILE_QUERYALL: `${prefix}/file/queryFiles`,
     FILE_DELETE:`${prefix}/file/delete`,
-    FILE_FETCH:`${prefix}/file/get`
+    FILE_FETCH:`${prefix}/file/get`,
+    TILE_DOWNLOAD_PROXY: `${prefix}/tileProxy/getTile`
 }
 
 

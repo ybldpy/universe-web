@@ -10,7 +10,7 @@ Visit our website at http://121.40.212.118:5000/ to explore the system.
 
 ![image-20250211115756894](readmeImages/image-20250211115756894.png)
 
-![image-20250211122116987](readmeImages/image-20250211122116987.png)
+![image-20250211122116987](readmeImages/img.png)
 
 ![image-20250211122005030](readmeImages/image-20250211122005030.png)
 

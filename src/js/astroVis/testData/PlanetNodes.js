@@ -69,13 +69,15 @@ const planets = [
                 layers: [
                     {
                         type: "color",
-                        maxLevel: 11,
-                        requestUrlFormat: testFlag ? "http://localhost:8001/color/{z}/{y}/{x}.jpg" : "http://121.40.212.118:5000/data/tile/earth_uploadedTile/color/{z}/{y}/{x}.jpg"
+                        maxLevel: 17,
+                        // requestUrlFormat: testFlag ? "http://localhost:8001/color/{z}/{y}/{x}.jpg" : "http://121.40.212.118:5000/data/tile/earth_uploadedTile/color/{z}/{y}/{x}.jpg"
+                        requestUrlFormat: "https://wi.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg",
+                        useProxy:true
                     },
                     {
                         type: "height",
                         maxLevel: 7,
-                        requestUrlFormat: testFlag ? "http://localhost:8001/height2/built/{z}/{y}/{x}.tif" : "/data/tile/earth/height/{z}/{y}/{x}.tif",
+                        requestUrlFormat: testFlag ? "http://localhost:8001/height2/built/{z}/{y}/{x}.tif" : "http://121.40.212.118:5000/data/tile/earth/height/{z}/{y}/{x}.tif",
                         // requestUrlFormat: "/data/t.jpg",
                         heightMultiplier: 20
                     }

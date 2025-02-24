@@ -562,7 +562,7 @@ export class RenderableOrbit extends RenderableObject{
 
     update(updateData) {
         this.orbitRing.material.uniforms.diffuse.value.copy(this.convertColorToRGB(this.orbitColor));
-        this.orbitRing.material.uniforms.radius.value = this.orbitNode.getWorldPosition()
+        this.orbitRing.material.uniforms.radius.value = this.orbitNode.getLocalPosition()
             .clone().sub(updateData.transformation.translation).length();
     }
 

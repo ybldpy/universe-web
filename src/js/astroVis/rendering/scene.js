@@ -222,16 +222,20 @@ export class SceneGraphNode{
         this.transformation.translation = updateData.transformation.translation;
         this.transformation.rotation = updateData.transformation.rotation;
         this.transformation.scaling = updateData.transformation.scaling;
-
         this.worldPosition = this.calcWorldPosition(updateData.transformation);
         this.worldRotation = this.calcWorldRotation(updateData.transformation);
         this.worldScaling = this.calcWorldScaling(updateData.transformation);
         this.calcLocalPosition();
         this.calcModelTransform();
+    }
+
+    updateRenderableObject(camera){
         if (this.renderableObject!=null){
-            this.renderableObject.update(new UpdateData(new Transformation(this.worldPosition.clone(),this.worldRotation.clone(),this.worldScaling.clone())));
+            const transformation = new Transformation(this.getLocalPosition().clone(),this.getWorldRotation().clone(),this.getWorldScaling().clone());
+            this.renderableObject.update(new UpdateData(transformation,camera));
         }
     }
+
     render(renderData,deferRenderingTaskQueue){
         if(this.renderableObject==null){return;}
         renderData.transformation = new Transformation(this.getLocalPosition(),this.getWorldRotation(),this.getWorldScaling());
@@ -274,19 +278,29 @@ export class Scene{
         this.nodes[node.getParentIdentifier()].addChild(node);
     }
 
-    update(){
+    update(camera){
         //nothing to update at present
         const nodesUpdateList = [this.nodes.root];
+        const updateDataList = []
         while(nodesUpdateList.length > 0){
             const node = nodesUpdateList.shift();
-            const updateData = new UpdateData(node.getTransformation());
+            const updateData = new UpdateData(node.getTransformation(),camera);
+            updateDataList.push(updateData);
             node.update(updateData);
+            node.childrenNodes.forEach((node)=>{nodesUpdateList.push(node)})
+        }
+        nodesUpdateList.push(this.nodes.root);
+        let idx = 0;
+        while(nodesUpdateList.length > 0){
+            const node = nodesUpdateList.shift();
+            //const updateData = new UpdateData(node.getTransformation(),camera);
+            node.updateRenderableObject(camera);
             node.childrenNodes.forEach((node)=>{nodesUpdateList.push(node)})
         }
     }
 
-    onFocusNodeChange(){
-        this.update();
+    onFocusNodeChange(camera){
+        this.update(camera);
     }
 
     render(scene,camera,deferRenderingTaskQueue){

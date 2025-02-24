@@ -6,8 +6,8 @@ export class FrameBufferRenderer{
         const width = this.renderer.domElement.clientWidth;
         const height = this.renderer.domElement.clientHeight;
         this.postProcessShaderQueue = [];
-        this.gBuffer = new THREE.WebGLRenderTarget(width * window.devicePixelRatio,
-            height * window.devicePixelRatio,{
+        this.gBuffer = new THREE.WebGLRenderTarget(screen.width,
+            screen.height,{
                 count:2,
                 format:THREE.RGBAFormat,
                 minFilter:THREE.LinearFilter,
@@ -15,8 +15,8 @@ export class FrameBufferRenderer{
                 type:THREE.FloatType
             });
         //this.gBuffer.depthTexture.type = THREE.FloatType;
-        this.rtA = new THREE.WebGLRenderTarget(width * window.devicePixelRatio,
-            height * window.devicePixelRatio,{
+        this.rtA = new THREE.WebGLRenderTarget(screen.width,
+            screen.height ,{
                 minFilter:THREE.LinearFilter,
                 magFilter:THREE.LinearFilter,
                 format:THREE.RGBAFormat,
@@ -24,8 +24,8 @@ export class FrameBufferRenderer{
                 depthBuffer:false,
                 type:THREE.FloatType
             });
-        this.rtB =  new THREE.WebGLRenderTarget(width * window.devicePixelRatio,
-            height * window.devicePixelRatio,{
+        this.rtB =  new THREE.WebGLRenderTarget(screen.width,
+            screen.height,{
                 minFilter:THREE.LinearFilter,
                 magFilter:THREE.LinearFilter,
                 format:THREE.RGBAFormat,
@@ -67,6 +67,19 @@ export class FrameBufferRenderer{
         this.plane = new THREE.Mesh(planeGeo,this.postShader);
         this.postScene.add(this.plane);
     }
+
+
+
+    resize(width,height){
+        //this.renderer.setSize(width,height)
+        // const renderTargetWidth = width * window.devicePixelRatio;
+        // const renderTargetHeight = height * window.devicePixelRatio;
+        // this.gBuffer.setSize(renderTargetWidth,renderTargetHeight);
+        // this.rtA.setSize(renderTargetWidth,renderTargetHeight)
+        // this.rtB.setSize(renderTargetWidth,renderTargetHeight);
+    }
+
+
     getPostProcessShaderQueue(){
         return this.postProcessShaderQueue;
     }

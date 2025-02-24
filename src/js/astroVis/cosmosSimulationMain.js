@@ -18,6 +18,7 @@ import * as dat from 'dat.gui';
 import Stats from 'stats.js';
 import {AssetManager} from "./manage/assetManage";
 import {BACKEND_API,PARAMETERS} from "../api";
+import {RenderableModel} from "./renderable/renderableModel";
 
 class App{
 
@@ -61,7 +62,14 @@ class App{
         document.body.appendChild(this.stat.dom);
         this.initUI();
 
+        new RenderableModel({modelUrl:"/data/3dModel/EinsteinProbe.fbx"})
 
+        // this.ui.add({"fov":45},"fov")
+
+
+        // fetch("https://wi.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/0/0/0.jpg").then((response)=>{
+        //     console.log(response);
+        // })
     }
 
     initUI(){
@@ -109,16 +117,26 @@ class App{
         if (node == null){return;}
         this.scene.addNode(node);
     }
+
+
+
+
+    resize(){
+        this.renderEngine.resize(window.innerWidth,window.innerHeight);
+    }
+
 }
 
 
 const renderer = new THREE.WebGLRenderer({logarithmicDepthBuffer:true,antialias:false});
-renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.setSize( screen.width,screen.height );
 document.body.appendChild( renderer.domElement );
-const camera = new THREE.PerspectiveCamera( 35, window.innerWidth / window.innerHeight, 1, 1e25 );
+const camera = new THREE.PerspectiveCamera( 45, screen.width / screen.height, 1, 1e25 );
 const scene = new THREE.Scene();
 const app = new App(renderer,scene,camera);
-
 app.render();
+window.onresize = ()=>{
+    app.resize()
+}
 
 

@@ -4,6 +4,7 @@ import {Image} from "image-js"
 import {RenderableObject} from '../rendering/base';
 import {commonFunctionsInclude} from "../rendering/common";
 import {appContext} from "../applicationContext";
+import {BACKEND_API} from "../../api";
 
 const utils = {
     clamp:function(value,min,max){
@@ -130,18 +131,39 @@ class TileProvider{
     }
 
     initTileArray(maxLevel){
+        this.tileReadyBitMapList = [];
+        this.tileList = [];
+        this.tileIndices = [];
+        // for(let i=0;i<=maxLevel;i++){
+        //     const pow = Math.pow(2,i);
+        //     let level = [];
+        //     for(let x = 0;x<pow;x++){
+        //         let row = [];
+        //         for(let y=0;y<pow;y++){
+        //             row.push(null);
+        //         }
+        //         level.push(row);
+        //     }
+        //     this.tiles.set(i,level);
+        // }
         for(let i=0;i<=maxLevel;i++){
             const pow = Math.pow(2,i);
-            let level = [];
-            for(let x = 0;x<pow;x++){
-                let row = [];
-                for(let y=0;y<pow;y++){
-                    row.push(null);
+            const level = [];
+            const indexLevel = [];
+            for(let u = 0;u<pow;u++){
+                const y = [];
+                for(let j = 0;j<Math.ceil(pow/64);j++){
+                    //y.push(0n);
                 }
-                level.push(row);
+                //indexLevel.push({});
+                //level.push(y);
+                level.push({});
             }
-            this.tiles.set(i,level);
+            //this.tileIndices.push(indexLevel);
+            //this.tileReadyBitMapList.push(level);
+            this.tileList.push(level)
         }
+
     }
 
     clear(){
@@ -161,8 +183,8 @@ class TileProvider{
     
     isTileAvailable(tileIndex){
         if(!this.isWithinRange(tileIndex)){return false;}
-        const tile = this.tiles.get(tileIndex.level)[tileIndex.y][tileIndex.x];
-        return tile!=null && tile.status == Tile.STATUS.available;
+        const tile = this.tileList[tileIndex.level][tileIndex.y][tileIndex.x];
+        return tile!==null && tile !== undefined && tile.status == Tile.STATUS.available;
     }
     isWithinRange(tileIndex){
         if(tileIndex.level>this.maxLevel){return false;}
@@ -172,21 +194,30 @@ class TileProvider{
 
 
     initializeTile(tileIndex){
-        let tile = this.tiles.get(tileIndex.level)[tileIndex.y][tileIndex.x];
-        if(tile==null){
+        let tile = this.tileList[tileIndex.level][tileIndex.y][tileIndex.x];
+        if(tile === undefined || tile===null){
             tile = new Tile(null);
-            this.tiles.get(tileIndex.level)[tileIndex.y][tileIndex.x] = tile;
+            this.tileList[tileIndex.level][tileIndex.y][tileIndex.x] = tile;
         }
-
-
     }
+
+
+
+    deleteTile(tileIndex){
+        const tile = this.tileList[tileIndex.level][tileIndex.y][tileIndex.x];
+        if (tile === undefined || tile === null){return;}
+        tile.dispose();
+        tile.texture = null;
+        delete this.tileList[tileIndex.level][tileIndex.y][tileIndex.x];
+    }
+
 
     getTile(tileIndex){
         if(!this.isWithinRange(tileIndex)){
             return this.unavailableTile;
         }
-        const tile = this.tiles.get(tileIndex.level)[tileIndex.y][tileIndex.x];
-        const isnullOrUndef = tile==null;
+        const tile = this.tileList[tileIndex.level][tileIndex.y][tileIndex.x];
+        const isnullOrUndef = tile===null || tile===undefined;
         if(!isnullOrUndef&&tile.status==Tile.STATUS.downloading){return this.unavailableTile;}
         else if(!isnullOrUndef&&tile.status == Tile.STATUS.available){return tile;}
         else {
@@ -205,10 +236,21 @@ class TileProvider{
     enqueueRetryDownload(tile){
         this.retryQueue.push(tile);
     }
+
+
+
+    putTileToBuffer(tile,tileIndex){
+        //const tileReadyBitMap = this.tileReadyBitMapList[tileIndex.z][tileIndex.y];
+        //tileReadyBitMap[Math.floor(tileIndex.x/64)] |= 1<<tileIndex.x%64;
+        // this.tileList.push(tile);
+        this.tileIndices[tileIndex.level][tileIndex.y][tileIndex.x] = tile;
+    }
+
     downloadTile(requestUrl,tileIndex){
         
         this.initializeTile(tileIndex);
-        const tile = this.tiles.get(tileIndex.level)[tileIndex.y][tileIndex.x]
+
+        const tile = this.tileList[tileIndex.level][tileIndex.y][tileIndex.x]
         tile.status = Tile.STATUS.downloading;
         this.textureLoader.load(requestUrl,onload = (texture)=>{
             // texture.wrapS = THREE.ClampToEdgeWrapping;
@@ -216,6 +258,7 @@ class TileProvider{
             this.currentMaxLevel = Math.max(tileIndex.level,this.currentMaxLevel);
             tile.texture = texture;
             tile.status = Tile.STATUS.available;
+            // this.putTileToBuffer(tile,tileIndex);
         },
         onerror = (e)=>{
             this.enqueueRetryDownload(tile);
@@ -229,6 +272,24 @@ class TileProvider{
         
     }
 }
+
+
+class ProxyTileProviderAdapter extends TileProvider{
+
+    constructor(requestFormat,maxLevel) {
+        super(requestFormat,maxLevel);
+    }
+
+
+
+    downloadTile(requestUrl, tileIndex) {
+        const parameters = encodeURI(`proxyUrl=${this.requestUrlFormat}&z=${tileIndex.level}&y=${tileIndex.y}&x=${tileIndex.x}`);
+
+        super.downloadTile(`${BACKEND_API.TILE_DOWNLOAD_PROXY}?${parameters}`,tileIndex);
+    }
+}
+
+
 class HeightTileProvider extends TileProvider{
     constructor(requestUrlFormat,maxLevel = 19){
         super(requestUrlFormat,maxLevel);
@@ -249,10 +310,8 @@ class HeightTileProvider extends TileProvider{
         // }
 
         this.initializeTile(tileIndex);
-        const tile = this.tiles.get(tileIndex.level)[tileIndex.y][tileIndex.x]
+        const tile = this.tileList[tileIndex.level][tileIndex.y][tileIndex.x]
         tile.status = Tile.STATUS.downloading;
-
-
         // if (true){
         //     this.textureLoader.load(requestUrl,onload = (texture)=>{
         //             // texture.wrapS = THREE.ClampToEdgeWrapping;
@@ -292,13 +351,11 @@ class HeightTileProvider extends TileProvider{
 
             //console.log(image.getPixelsArray());
             if (image.bitDepth == 8){
-
                 typedBuffer = new Uint8Array(image.getPixelsArray().length);
                 image.getPixelsArray().forEach((v,i)=>{
                     typedBuffer[i] = v[0]
                 })
                 //typedBuffer = new Uint8Array(image.data.buffer)
-
             }
             else if(image.bitDepth==16){
                 typedBuffer = new Int16Array(image.data.buffer);
@@ -309,22 +366,12 @@ class HeightTileProvider extends TileProvider{
             heightBuffer = new Float32Array(image.width*image.height);
             let minValue = 0;
             let maxValue = 0;
-
             typedBuffer.forEach((v,i)=>{heightBuffer[i]=v;minValue = Math.min(minValue,v);});
-            const renderColor = new THREE.Vector4(0.0,0.0,0.0,1.0);
-            if (tileIndex.x%2==1){
-                renderColor.z = 1
-            }
-            if (tileIndex.y%2 == 1){
-                renderColor.y = 1;
-            }
-
-
             tile.maxPixelValue = image.maxValue;
             tile.minPixelValue = minValue;
             tile.texture = new THREE.DataTexture(heightBuffer, image.width, image.height, THREE.RedFormat, THREE.FloatType,THREE.UVMapping,
                 THREE.ClampToEdgeWrapping,THREE.ClampToEdgeWrapping,
-                THREE.NearestFilter,THREE.NearestFilter);
+                THREE.LinearFilter,THREE.LinearFilter);
             //tile.texture.isDataTexture = false;
             tile.status = Tile.STATUS.available;
             tile.texture.flipY = true
@@ -383,6 +430,7 @@ class Layer{
     constructor(tileProvider,type){
         this.tileProvider = tileProvider
         this.type = type;
+        this.toDeleteMap = {};
     }
     getTile(tileIndex){
         return this.tileProvider.getTile(tileIndex);
@@ -394,11 +442,18 @@ class Layer{
         return this.tileProvider.isTileAvailable(tileIndex);
     }
     dispose(tileIndex){
-        const tile = this.getTile(tileIndex);
-        if (tile!==undefined && tile!==null){
-            tile.dispose();
+        const tileIndexKey = `${tileIndex.level}/${tileIndex.y}/${tileIndex.x}`
+        if (this.toDeleteMap[tileIndexKey]!==undefined){return;}
+        else {
+            this.toDeleteMap[tileIndexKey] = true;
+            setTimeout(()=>{
+                if (this.toDeleteMap[tileIndexKey]===undefined){return;}
+                delete this.toDeleteMap[tileIndexKey];
+                this.tileProvider.deleteTile(tileIndex);
+            },45*1000);
         }
     }
+
     //the clost tile is self
     findClostAvailableTile(tileIndex){
         const uvTransform = [new THREE.Vector2(0,0),1];
@@ -409,6 +464,10 @@ class Layer{
             tileIndex.level--;
             tileIndex.x = Math.floor((tileIndex.x)/2);
             tileIndex.y = Math.floor((tileIndex.y)/2);
+        }
+        const tileIndexKey = `${tileIndex.level}/${tileIndex.y}/${tileIndex.x}`;
+        if (this.toDeleteMap[tileIndexKey]!==undefined){
+            delete this.toDeleteMap[tileIndexKey];
         }
         const tile = this.getTile(tileIndex);
         return {tile,uvTransform};
@@ -518,6 +577,8 @@ class Chunk {
         this.tileIndex = tileIndex;
         this.surface = null;
         this.status = status;
+        this.minHeight = 0;
+        this.maxHeight = 0;
     }
     getMinLatInAngle(){
         return this.minLat;
@@ -828,14 +889,16 @@ export class RenderablePlanet extends RenderableObject{
         this.scale = new THREE.Vector3();
         this.modelTransformCached = new THREE.Matrix4().makeTranslation(this.position);
         this.modelTransformCached.multiply(this.rotation);
-        this.level0Threshold = this.radius + 1.5 * this.radius;
+        this.level0Threshold = this.radius + 3 * this.radius;
         this.translation = new THREE.Matrix4();
         this.heightMultiplier = 1;
+        this.base = new THREE.Group();
         //this.colorTileProvider = new TileProvider("https://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",this.maxLevel)
         //this.setTileProvider("https://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",this.maxLevel,scene)
         this.initLayers();
         layers.forEach(layer=>this.addLayer(layer));
         this.initProps(shadow);
+        this.addedToScene = false;
 
 
     }
@@ -843,6 +906,15 @@ export class RenderablePlanet extends RenderableObject{
         let defaultTileProvider = new TileProvider("",this.maxLevel);
         this.colorLayer = new Layer(defaultTileProvider,Layer.TYPE.COLOR);
         this.heightLayer = new Layer(defaultTileProvider,Layer.TYPE.HEIGHT);
+    }
+
+
+    updateModelTransform(position,rotation,scaling){
+        const tempMat = new THREE.Matrix4();
+        tempMat.makeScale(scaling.x,scaling.y,scaling.z);
+        this.modelTransformCached.copy(rotation).premultiply(tempMat);
+        tempMat.makeTranslation(position.x,position.y,position.z);
+        this.modelTransformCached.premultiply(tempMat);
     }
 
 
@@ -921,7 +993,9 @@ export class RenderablePlanet extends RenderableObject{
         if(type==undefined||type==null||typeof type !== 'string'||maxLevel==undefined||maxLevel==null||typeof maxLevel !=="number"){return;}
         type = type.toLowerCase();
         if(Layer.TYPE.COLOR.toLowerCase() === type){
-            this.colorLayer = new Layer(new TileProvider(layer.requestUrlFormat,maxLevel),Layer.TYPE.COLOR);
+
+            const useProxy = layer.useProxy || false;
+            this.colorLayer = new Layer(useProxy?new ProxyTileProviderAdapter(layer.requestUrlFormat,maxLevel):new TileProvider(layer.requestUrlFormat,maxLevel),Layer.TYPE.COLOR);
         }
         else if (Layer.TYPE.HEIGHT.toLowerCase() === type){
             if (layer.heightMultiplier!==undefined){
@@ -942,15 +1016,7 @@ export class RenderablePlanet extends RenderableObject{
         const normal = new THREE.Vector3(cosLat*Math.cos(lon),cosLat*Math.sin(lon),Math.sin(lat));
         return normal.multiplyScalar(radius);
     }
-    update(updateData){
-        this.position = updateData.transformation.translation;
-        this.rotation = updateData.transformation.rotation;
-        this.scaling = updateData.transformation.scaling;
-        const translationMat = new THREE.Matrix4().makeTranslation(this.position.x,this.position.y,this.position.z);
-        const scalingMat = new THREE.Matrix4().makeScale(this.scaling.x,this.scaling.y,this.scaling.z);
-        this.heightMultiplier = this.props.heightMultiplier
-        //this.modelTransformCached = new THREE.Matrix4().multiply(translationMat).multiply(scalingMat).multiply(this.rotation);
-    }
+
     XYZToLonLat(posVec3ModelSpace){
         const normal = posVec3ModelSpace.normalize();
         // const latitude = Math.asin(normal.z);
@@ -1010,13 +1076,23 @@ export class RenderablePlanet extends RenderableObject{
 
     }
     cullChunksByProjectionArea(chunk,camera){
-        const cloestCorner = this.findClostCornerToCamera(chunk,camera);
-        const cameraPosModelSpace = camera.position.clone().applyMatrix4(this.getModelTransform().clone().invert());
-        const cornerToCamera = cameraPosModelSpace.clone().sub(cloestCorner);
-        const cos = cornerToCamera.clone().normalize().dot(cloestCorner.normalize());
-        const cullable = cos>0;
-        // console.log(cos);
-        return false;
+        // const cloestCorner = this.findClostCornerToCamera(chunk,camera);
+        // const cameraPosModelSpace = camera.position.clone().applyMatrix4(this.getModelTransform().invert());
+        // const cornerToCamera = cameraPosModelSpace.clone().sub(cloestCorner);
+        // const cos = cornerToCamera.clone().normalize().dot(cloestCorner.normalize());
+        // const cullable = cos<0;
+        // return cullable;
+
+
+        const dictToCamera = camera.position.clone().applyMatrix4(this.getModelTransform().invert());
+        dictToCamera.normalize();
+        new THREE.Vector3().length()
+        const projectedPoint = new THREE.Vector2(Math.asin(dictToCamera.z),Math.atan2(dictToCamera.y,dictToCamera.x));
+        
+
+
+
+
     }
     cullInvisibleChunks(root,camera){
 
@@ -1044,13 +1120,13 @@ export class RenderablePlanet extends RenderableObject{
         }
     }
 
-    mergeChunk(chunk,scene){
+    mergeChunk(chunk){
         if(!chunk.isLeaf()){
             for(let i=0;i<chunk.children.length;i++){
-                this.mergeChunk(chunk.children[i],scene);
+                this.mergeChunk(chunk.children[i]);
             }
             for(let i=0;i<chunk.children.length;i++){
-                this.disposeChunk(chunk.children[i],scene);
+                this.disposeChunk(chunk.children[i]);
                 chunk.children[i] = null;
             }
         }
@@ -1076,18 +1152,29 @@ export class RenderablePlanet extends RenderableObject{
         const canSplit = childTile00.status==tileAvailableState || childTile10.status == tileAvailableState || childTile01.status == tileAvailableState || childTile11.status == tileAvailableState;
         return canSplit;
     }
-    updateChunk(chunk,renderData){
-        let canBeCulled = !this.intersectsWithFrustram(chunk,renderData.camera) || this.cullChunksByProjectionArea(chunk,renderData.camera);
-        canBeCulled = false;
+
+
+    getChunkMinHeight(tileIdx){
+
+        const tileIdxCopy = new TileIndex(tileIdx.length,tileIdx.x,tileIdx.y);
+        const {tile,uvTransform} = this.heightLayer.findClostAvailableTile(tileIdxCopy);
+        return tile.minPixelValue *this.props.heightMultiplier + this.props.heightOffset;
+    }
+
+    updateChunk(chunk,camera){
+        let canBeCulled = this.cullChunksByProjectionArea(chunk,camera);
+        // canBeCulled = false;
         if(canBeCulled){
             chunk.status = Chunk.STATUS.wantMerge;
             return;
         }
-        const dl = this.calDesiredLevel(chunk,renderData);
+
+        chunk.minHeight = this.getChunkMinHeight(chunk.tileIndex);
+        const dl = this.calDesiredLevel(chunk,camera);
         const tileAvailable = this.colorLayer.getTile(chunk.tileIndex).status == Tile.STATUS.available || this.heightLayer.getTile(chunk.tileIndex).status == Tile.STATUS.available;
         //const tileAvailable = this.colorLayer.getTile(chunk.tileIndex).status == Tile.STATUS.available;
         if(chunk.tileIndex.level < dl && chunk.isLeaf()){
-            if(false&&!tileAvailable){chunk.status = Chunk.STATUS.doNothing;}
+            if(!tileAvailable){chunk.status = Chunk.STATUS.doNothing;}
             else {
                 const tileIndex = chunk.tileIndex;
                 chunk.status = (this.canChunkSplit(tileIndex,this.colorLayer)||this.canChunkSplit(tileIndex,this.heightLayer))?Chunk.STATUS.wantSplit:Chunk.STATUS.doNothing;
@@ -1102,29 +1189,26 @@ export class RenderablePlanet extends RenderableObject{
         }
 
     }
-    updateChunkTree(chunk,renderData){
-        this.updateChunk(chunk,renderData);
+    updateChunkTree(chunk,camera){
+        this.updateChunk(chunk,camera);
         if(chunk.status == Chunk.STATUS.wantSplit){
             this.splitChunk(chunk);
-            //chunk.surface.visible = false;
         }
         else if(!chunk.isLeaf()){
             let allChildrenWantMerge = true;
             for(let i=0;i<4;i++){
-                this.updateChunkTree(chunk.children[i],renderData);
+                this.updateChunkTree(chunk.children[i],camera);
                 allChildrenWantMerge = allChildrenWantMerge && chunk.children[i].status==Chunk.STATUS.wantMerge;
             }
             if(allChildrenWantMerge){
-                this.mergeChunk(chunk,renderData.scene);
-                this.updateChunk(chunk,renderData);
+                this.mergeChunk(chunk);
+                this.updateChunk(chunk,camera);
             }
-
         }
-
     }
 
-    calDesiredLevel(chunk,renderData){
-        const dl = clamp(this.calculateDesireLevelByDistance(chunk,renderData),this.minLevel,this.maxLevel);
+    calDesiredLevel(chunk,camera){
+        const dl = clamp(this.calculateDesireLevelByDistance(chunk,camera,this.getModelTransform()),this.minLevel,this.maxLevel);
         const maxTileAvaibleLevel = Math.max(this.colorLayer.getCurrentMaxLevel(),this.heightLayer.getCurrentMaxLevel());
 
         if(dl>maxTileAvaibleLevel){
@@ -1159,11 +1243,10 @@ export class RenderablePlanet extends RenderableObject{
         // return dl;
     }
     getModelTransform(){
-        return this.modelTransformCached;
+        return this.modelTransformCached.clone();
     }
-    calculateDesireLevelByDistance(chunk,renderData){
-        const camera = renderData.camera;
-        const modelTransform = renderData.modelTransform;
+    calculateDesireLevelByDistance(chunk,camera,objectTransform){
+        const modelTransform = objectTransform;
         const cameraPositionModelSpace = camera.position.clone().applyMatrix4(modelTransform.clone().invert());
         const closestPointOnPatch = chunk.calculateCloestPoint(this.XYZToLonLat(cameraPositionModelSpace.clone()));
         const pointPositionXYZ = this.latLonToXYZ(closestPointOnPatch.y,closestPointOnPatch.x,this.radius);
@@ -1173,17 +1256,17 @@ export class RenderablePlanet extends RenderableObject{
         // const distance = cameraPositionModelSpace.sub(corner).length();
         // console.log(Math.ceil(Math.log2(3*this.radius / distance)));
         //console.log(Math.ceil(Math.log2(1.5*this.radius / distance)))
-        return Math.ceil(Math.log2(2*this.radius / distance));
+        return Math.ceil(Math.log2(6*this.radius / distance));
     }
-    disposeChunk(chunk,scene){
+    disposeChunk(chunk){
         if(chunk.surface!=null){
-            scene.remove(chunk.surface);
+            this.base.remove(chunk.surface);
             this.heightLayer.dispose(chunk.tileIndex)
             this.colorLayer.dispose(chunk.tileIndex)
             chunk.surface = null;
         }
     }
-    getRenderedChunks(chunk,list,scene){
+    getRenderedChunks(chunk,list){
         if(chunk.isLeaf()){
             list.push(chunk);
             return;
@@ -1195,7 +1278,7 @@ export class RenderablePlanet extends RenderableObject{
             }
         }
         for(let i=0;i<chunk.children.length;i++){
-            this.getRenderedChunks(chunk.children[i],list,scene);
+            this.getRenderedChunks(chunk.children[i],list);
         }
     }
 
@@ -1209,16 +1292,9 @@ export class RenderablePlanet extends RenderableObject{
         //tile.uploadTextureToGPU();
         uniforms[uniformName].value.uvTransform.uvOffset = uvTransform[0];
         uniforms[uniformName].value.uvTransform.scale = uvTransform[1];
-
-        if(tile.texture!=null){
-            tile.texture.wrapS = THREE.ClampToEdgeWrapping;
-            tile.texture.wrapT = THREE.ClampToEdgeWrapping;
-        }
         if(layer.type == Layer.TYPE.HEIGHT){
             uniforms.minHeight.value = tile.minPixelValue;
-
         }
-
     }
 
     setUniforms(chunk,renderData,i){
@@ -1280,33 +1356,11 @@ export class RenderablePlanet extends RenderableObject{
     renderChunk(chunk,renderData,i){
         if(chunk.surface == null){
             chunk.surface = this.createSurface(chunk);
-            renderData.scene.add(chunk.surface);
+            this.base.add(chunk.surface);
         }
         chunk.surface.visible = true;
-        //chunk.surface.visible = chunk.tileIndex.x%2==0;
-        //chunk.surface.material.wireframe = ui.wireFrame;
-        //console.log(ui.wireFrame);
         this.setUniforms(chunk,renderData,i);
-        // const gl = renderer.getContext();
-        // this.activeShaderProgram(gl);
-        // gl.uniformMatrix4fv(gl.getUniformLocation(this.shaderProgram,"projectionMatrix"),false,camera.projectionMatrix);
-        // gl.uniformMatrix4fv(gl.getUniformLocation(this.shaderProgram,"modelViewMatrix"),)
-
     }
-    renderChunks(camera,scene){
-        //const dl = this.calDesiredLevel(camera);
-        // this.updateChunkTree(this.leftRoot,camera,scene);
-        // this.updateChunkTree(this.rightRoot,camera,scene);
-    }
-
-
-    // update(updateData){
-    //
-    //
-    //     this.updateShadowSourceWorldPosition();
-    // }
-
-
 
 
     updateShadowSourceWorldPosition(){
@@ -1318,11 +1372,26 @@ export class RenderablePlanet extends RenderableObject{
         }
     }
 
-    render(renderData){
-        this.updateChunkTree(this.root,renderData);
+    update(updateData){
+        this.position = updateData.transformation.translation;
+        this.rotation = updateData.transformation.rotation;
+        this.scaling = updateData.transformation.scaling;
+        const translationMat = new THREE.Matrix4().makeTranslation(this.position.x,this.position.y,this.position.z);
+        const scalingMat = new THREE.Matrix4().makeScale(this.scaling.x,this.scaling.y,this.scaling.z);
+        this.updateModelTransform(this.position,this.rotation,this.scaling);
+        this.heightMultiplier = this.props.heightMultiplier
+        this.updateChunkTree(this.root,updateData.camera);
         this.updateShadowSourceWorldPosition();
+    }
+
+    render(renderData){
+
+        if (!this.addedToScene){
+            this.addedToScene = true;
+            renderData.scene.add(this.base);
+        }
         const renderedChunkList = [];
-        this.getRenderedChunks(this.root,renderedChunkList,renderData.scene);
+        this.getRenderedChunks(this.root,renderedChunkList);
         for(let i=0;i<renderedChunkList.length;i++){
             this.renderChunk(renderedChunkList[i],renderData,i);
         }
