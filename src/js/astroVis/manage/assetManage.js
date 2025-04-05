@@ -16,7 +16,7 @@ export class AssetManager{
      * @param nodes nodes json object
      * @param scene scene object
      */
-    loadAssets(nodes,scene){
+    addAssets(nodes,scene){
         const nodeTree = {
             "root":[]
         }
@@ -34,7 +34,6 @@ export class AssetManager{
             nodeTree[node.identifier].forEach((value)=>{buildQueue.push(value)});
             const sceneGraphNode = this.sceneGraphNodeFactory.createNode(node,scene);
             scene.addNode(sceneGraphNode);
-            sceneGraphNode.setupUI(appContext.gui.scene.addFolder(sceneGraphNode.getIdentifier()));
         }
     }
 
@@ -68,7 +67,7 @@ export class AssetManager{
                 }
             }
         }
-        this.loadAssets(assetList,scene);
+        this.addAssets(assetList,scene);
     }
 
 

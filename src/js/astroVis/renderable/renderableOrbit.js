@@ -483,9 +483,7 @@ export class RenderableOrbit extends RenderableObject{
                 resolution:{value:new THREE.Vector2(1,1)},
                 diffuse:{value:new THREE.Vector3()}
             },
-            // defines:{
-            //     WORLD_UNITS:true
-            // },
+            transparent:false,
             side:THREE.DoubleSide
         })
 
@@ -557,7 +555,7 @@ export class RenderableOrbit extends RenderableObject{
         const r = (color >> 16) & 0xff;
         const g = (color >> 8) & 0xff;
         const b = color & 0xff;
-        return new THREE.Vector3(r,g,b).divideScalar(255);
+        return new THREE.Vector4(r,g,b).divideScalar(255);
     }
 
     update(updateData) {

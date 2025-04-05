@@ -535,10 +535,10 @@ export class RenderableStars extends RenderableObject {
         vec2 unshiftedCoordsHalo = (scaledCoordsHalo + 1.0) / 2.0;
         vec4 color = vec4(0.0);
         switch(renderColorOption){
-            case 1:
+            case 0:
                 color = getBVColor(vBvLumAbsMag.x);
                 break;
-            case 2:
+            case 1:
                 color.xyz = vVelocity;
                 break;
             default:
@@ -573,12 +573,15 @@ export class RenderableStars extends RenderableObject {
         this.prop = {
             magExponent:magExponent,
             visible:true,
-            renderColorOption:"bv"
-        }
-
-        this.renderColorOptionMap = {
-            "bv":1,
-            "velocity":2
+            renderColorOption:{
+                isOption: true,
+                optionMap:{
+                    "bv":0,
+                    "velocity":1,
+                    "speed":2
+                },
+                selected: 0
+            }
         }
 
 
@@ -594,12 +597,17 @@ export class RenderableStars extends RenderableObject {
     }
 
 
-    addUIComponent(uiComponent){
-        uiComponent.add(this.prop,"magExponent",1,20);
-        uiComponent.add(this.prop,"visible");
-        uiComponent.add(this.prop,"renderColorOption",["bv","velocity","speed"]).onChange((value)=>{
-            this.shaderMaterial.uniforms.renderColorOption.value = this.renderColorOptionMap[value]
-        })
+    // addUIComponent(uiComponent){
+    //     uiComponent.add(this.prop,"magExponent",1,20);
+    //     uiComponent.add(this.prop,"visible");
+    //     uiComponent.add(this.prop,"renderColorOption",["bv","velocity","speed"]).onChange((value)=>{
+    //         this.shaderMaterial.uniforms.renderColorOption.value = this.renderColorOptionMap[value]
+    //     })
+    // }
+
+
+    getProps() {
+        return this.prop;
     }
 
 
@@ -655,7 +663,7 @@ export class RenderableStars extends RenderableObject {
                 [this.COLOR_MAP_TEXTURE_NAME]:{value:this.COLOR_MAP_TEXTURE},
                 cameraUp:{value:new THREE.Vector3(0,1,0)},
                 magExponent:{value:1.0},
-                renderColorOption:{value:this.renderColorOptionMap.bv},
+                renderColorOption:{value:this.prop.renderColorOption.selected},
             },
             transparent:true,
             //depthTest: false,
@@ -839,6 +847,9 @@ export class RenderableStars extends RenderableObject {
 
             disposeNodesIndices.forEach((idx)=>{delete this.notVisibleNodes[idx]});
         }
+
+
+        this.shaderMaterial.uniforms.renderColorOption.value = this.prop.renderColorOption.selected;
 
     }
     render(renderData) {

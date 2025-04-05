@@ -37,7 +37,7 @@ export class RenderableObject{
 
 
 
-    addUIComponent(uiComponent){}
+    getProps(){return null}
 
     update(updateData){}
     render(renderData,postRenderingTaskQueue){}

@@ -1,5 +1,6 @@
-import {RenderableObject, RenderData,UpdateData} from "./rendering/base"
+import {RenderableObject, RenderData,UpdateData} from "../rendering/base"
 import * as THREE from "three"
+import {commonFunctionsInclude} from "../rendering/common";
 
 export class RenderableBackgroundSphere extends RenderableObject{
 
@@ -13,10 +14,10 @@ export class RenderableBackgroundSphere extends RenderableObject{
     
     void main(){
     
-    vUv = uv;
-    gl_Position = projectionMatrix *  modelViewMatrix * vec4(position,1.0);
-    // vsDepth = gl_Position.z;
-    // gl_Position.z = 0.0;
+        vUv = uv;
+        gl_Position = projectionMatrix *  modelViewMatrix * vec4(position,1.0);
+        vsDepth = gl_Position.w;
+        gl_Position.z = 0.0;
     }
     `
 
@@ -29,25 +30,27 @@ export class RenderableBackgroundSphere extends RenderableObject{
     
     
     layout(location = 1) out vec4 gPosition;
-    // layout(location = 0) out vec4 fragColor;
+    //layout(location = 0) out vec4 fragColor;
     
     
     uniform sampler2D background;
     
+    
+    ${commonFunctionsInclude}
+    
     void main(){
-        // gl_FragDepth = log(1.0*vsDepth+1.0)/log(1.0 * 1e15 +1.0);
-        pc_fragColor = texture(background,vUv);
+        gl_FragDepth = calculateLogDepth(vsDepth);
+        pc_fragColor = vec4(texture(background,vUv).xyz,1.0)*0.75;
         //pc_fragColor = vec4(1.0);
         //if(vUv.x < 0.5 && vUv.y<0.5){pc_fragColor = vec4(1.0);}
         gPosition = vec4(1.0);
-        
     }
     
     
     
     `
 
-    constructor(radius,backgroundUrl) {
+    constructor({radius, backgroundUrl}) {
         super();
         this.radius = radius;
         this.backgroundTexture = null;
@@ -65,10 +68,20 @@ export class RenderableBackgroundSphere extends RenderableObject{
             uniforms:{
                 background:{value:new THREE.Texture()}
             },
+            // depthTest:false,
+            transparent:false,
             side:THREE.BackSide
         });
         this.sphere = new THREE.Mesh(sphereGeometry,shaderMaterial);
+        // this.sphere.renderOrder = 3;
+        this.ui = {
+            hidden:false
+        }
         this.addedToScene = false;
+    }
+
+    addUIComponent(uiComponent) {
+        uiComponent.add(this.ui,"hidden");
     }
 
     update(updateData) {
@@ -77,6 +90,7 @@ export class RenderableBackgroundSphere extends RenderableObject{
             this.backgroundTexture.needsUpdate = true;
             this.textureNeedsUpdate = false;
         }
+        this.sphere.visible = !this.ui.hidden;
         this.sphere.position.copy(updateData.transformation.translation);
     }
     render(renderData) {

@@ -170,71 +170,137 @@ const planets = [
                 greenWave:778
             }
         }
-    }
+    },
 
-    // {
-    //     identifier: "mars",
-    //     parent: "solarSystem",
-    //     reachRadius: 1000e3,
-    //     transformation: {
-    //         position: [2.066e11,0,0],
-    //         rotation: [0,0,0],
-    //         scaling: [1,1,1]
-    //     },
-    //     renderableObject: {
-    //         type: "renderableGlobe",
-    //         radius: 3396190,
-    //         layers: [
-    //             {
-    //                 type: "color",
-    //                 maxLevel: 2,
-    //                 requestUrlFormat: "/data/asset/mars/tile/{z}/{y}/{x}.png"
-    //             }
-    //         ]
-    //     }
-    // },
-    // {
-    //     identifier: "venus",
-    //     parent: "solarSystem",
-    //     reachRadius: 1000e3,
-    //     transformation: {
-    //         position: [1.074e11,0,0],
-    //         rotation: [0,0,0],
-    //         scaling: [1,1,1]
-    //     },
-    //     renderableObject: {
-    //         type: "renderableGlobe",
-    //         radius: 6051900,
-    //         layers: [
-    //             {
-    //                 type: "color",
-    //                 maxLevel: 2,
-    //                 requestUrlFormat: "/data/asset/venus/tile/{z}/{y}/{x}.jpg"
-    //             }
-    //         ]
-    //     }
-    // },
-    // {
-    //     identifier: "neptune",
-    //     parent: "solarSystem",
-    //     reachRadius: 1000e3,
-    //     transformation: {
-    //         position: [0,0,4.054e12],
-    //         rotation: [0,0,0],
-    //         scaling: [1,1,1]
-    //     },
-    //     renderableObject: {
-    //         type: "renderableGlobe",
-    //         radius: 24764000,
-    //         layers: [
-    //             {
-    //                 type: "color",
-    //                 maxLevel: 2,
-    //                 requestUrlFormat: "/data/asset/neptune/tile/{z}/{y}/{x}.jpg"
-    //             }
-    //         ]
-    //     }
-    // }
+    {
+        identifier: "mars",
+        parent: "solarSystem",
+        reachRadius: 3396300,
+        transformation: {
+            position: [2.066e11,0,0],
+            rotation: [0,0,0],
+            scaling: [1,1,1]
+        },
+        renderableObject: {
+            type: "renderablePlanet",
+            params:{
+                radius: 3396190,
+                layers: [
+                    {
+                        type: "color",
+                        maxLevel: 13,
+                        requestUrlFormat: "http://wms.itn.liu.se/Mars/MDIM/tile/{z}/{y}/{x}",
+                        useProxy:true
+                    }
+                ]
+            }
+        }
+    },
+    {
+        identifier: "venus",
+        parent: "solarSystem",
+        reachRadius: 6052000,
+        transformation: {
+            position: [1.074e11,0,0],
+            rotation: [0,0,0],
+            scaling: [1,1,1]
+        },
+        renderableObject: {
+            type: "renderablePlanet",
+            params: {
+                radius: 6051900,
+                layers: [
+                    {
+                        type: "color",
+                        maxLevel: 2,
+                        requestUrlFormat: "/data/asset/venus/tile/{z}/{y}/{x}.jpg"
+                    }
+                ]
+            }
+        }
+    },
+    {
+        identifier: "neptune",
+        parent: "solarSystem",
+        reachRadius: 24764100,
+        transformation: {
+            position: [4498000000000,0,0],
+            rotation: [0,0,0],
+            scaling: [1,1,1]
+        },
+        renderableObject: {
+            type: "renderablePlanet",
+            params: {
+                radius: 24764000,
+                layers: [
+                    {
+                        type: "color",
+                        maxLevel: 2,
+                        requestUrlFormat: "/data/asset/neptune/tile/{z}/{y}/{x}.jpg"
+                    }
+                ]
+            }
+        }
+    },
+    {
+        identifier: "mercury",
+        parent: "solarSystem",
+        reachRadius: 2440100,
+        transformation: {
+            position: [57910000e3,0,0],
+            rotation: [0,0,0],
+            scaling: [1,1,1]
+        },
+        renderableObject: {
+            type: "renderablePlanet",
+            params: {
+                radius: 2440e3,
+                layers: [
+                    {
+                        type: "color",
+                        maxLevel: 15,
+                        useProxy: true,
+                        requestUrlFormat: "http://wms.itn.liu.se/Mercury/Messenger_BDR/tile/{z}/{y}/{x}"
+                    }
+                ]
+            }
+        }
+    },
+    {
+        identifier: "saturn",
+        parent: "solarSystem",
+        reachRadius: 58232100,
+        transformation: {
+            position: [1429000000e3,0,0],
+            rotation: [0,0,0],
+            scaling: [1,1,1]
+        },
+        renderableObject: {
+            type: "renderablePlanet",
+            params: {
+                radius: 58232e3,
+                layers: [
+                    {
+                        type: "color",
+                        maxLevel: 2,
+                        requestUrlFormat: "/data/asset/saturn/{z}/{y}/{x}.jpg"
+                    }
+                ]
+            }
+        }
+    },
+    {
+        identifier: "background",
+        parent: "root",
+        reachRadius: 10,
+        renderableObject: {
+            type: "renderableBackgroundSphere",
+            params: {
+                radius: 1e25,
+                backgroundUrl: "/data/eso_dark.jpg"
+            }
+        }
+    }
 ]
 
 
@@ -248,7 +314,7 @@ export function createStarsTestNode(name,datasourceFormat,requestUrl,magExponent
     //const renderableStars = null;
     const root = appContext.scene.findNodeByIdentifier("root");
     const node = new SceneGraphNode({identifier:name,parentNode:root,renderableObject:renderableStars});
-    node.setupUI(appContext.gui.scene.addFolder(name));
+    // node.setupUI(appContext.gui.scene.addFolder(name));
     return node;
 }
 
@@ -262,8 +328,14 @@ export function createSolarSystemPlantsOrbitNode(){
     const nodes = []
 
     const solarSystem = "solarsystem"
-    nodes.push(createOrbitTestNode("earthOrbit","earth",solarSystem))
-    nodes.push(createOrbitTestNode("jupiterOrbit","jupiter",solarSystem))
+    nodes.push(createOrbitTestNode("earthOrbit","earth",solarSystem));
+    nodes.push(createOrbitTestNode("jupiterOrbit","jupiter",solarSystem));
+    nodes.push(createOrbitTestNode("mercuryOrbit","mercury",solarSystem));
+    nodes.push(createOrbitTestNode("saturnOrbit","saturn",solarSystem));
+    nodes.push(createOrbitTestNode("neptuneOrbit","neptune",solarSystem));
+    nodes.push(createOrbitTestNode("venusOrbit","venus",solarSystem));
+    nodes.push(createOrbitTestNode("marsOrbit","mars",solarSystem));
+
     // nodes.push(createOrbitTestNode("marsOrbit","mars",solarSystem))
     // nodes.push(createOrbitTestNode("venusOrbit","venus",solarSystem))
     // nodes.push(createOrbitTestNode("neptuneOrbit","neptune",solarSystem))

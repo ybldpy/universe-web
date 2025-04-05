@@ -122,18 +122,26 @@ export class SceneGraphNode{
         this.scalingMat = new THREE.Matrix4();
         this.modelTransformionCached = new THREE.Matrix4();
         this.localPosition = new THREE.Vector3();
-    }
-
-
-
-    setupUI(uiComponent){
-        this.ui = uiComponent
-        if (this.renderableObject!=null){
-            const childUI = this.ui.addFolder("renderableObject")
-            this.renderableObject.addUIComponent(childUI)
+        this.props = {
+            [this.identifier]: null
         }
+
+
+        this.setupUI()
+
     }
 
+    getProps(){
+        if (this.renderableObject!=null){
+            this.props[this.identifier] = this.renderableObject.getProps();
+        }
+        return this.props;
+    }
+
+
+    setupUI(){
+        appContext["uiManager"].addSceneNodeUi(this.getProps());
+    }
 
     getReachRadius(){
         return this.reachRadius;

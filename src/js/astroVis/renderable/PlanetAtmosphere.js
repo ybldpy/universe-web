@@ -239,6 +239,7 @@ export class PlanetAtmosphere extends RenderableObject{
             sunIntensity:intensity,
             scatteringStrength:scatteringStrengh,
             density:density,
+            visible:true,
         }
         this.shader = new THREE.ShaderMaterial({
             vertexShader:PlanetAtmosphere.vs,
@@ -286,8 +287,16 @@ export class PlanetAtmosphere extends RenderableObject{
 
 
 
+    getProps() {
+        return this.props
+    }
+
 
     render(renderData,postProcessShaderQueue){
+        if (!this.props.visible){return;}
+
+
+
         const uniforms = this.shader.uniforms;
         const camera = renderData.camera;
         //uniforms.sunPosition.value.copy(camera.position);

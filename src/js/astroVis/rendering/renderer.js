@@ -14,7 +14,6 @@ export class FrameBufferRenderer{
                 magFilter:THREE.LinearFilter,
                 type:THREE.FloatType
             });
-        //this.gBuffer.depthTexture.type = THREE.FloatType;
         this.rtA = new THREE.WebGLRenderTarget(screen.width,
             screen.height ,{
                 minFilter:THREE.LinearFilter,
@@ -110,6 +109,9 @@ export class FrameBufferRenderer{
     }
 
     render(scene,camera){
+
+
+
         const originalRenderTarget = this.renderer.getRenderTarget();
         this.renderer.setRenderTarget(this.gBuffer);
         // render gBuffer

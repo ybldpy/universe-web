@@ -836,24 +836,21 @@ export class RenderablePlanet extends RenderableObject{
     uniform vec4 childIndexColor;
     uniform bool childIndexRenderEnabled;
     void main(){
-        //gl_FragDepth = LinearizeDepth(-vsPosition.w);
         gl_FragDepth = calculateLogDepth(vsPosition.w);
-        //gl_FragDepth = (vsPosition.z - 0.1) / (1e20-0.1);
+        
         vec4 color = vec4(texture(colorLayer.tile,colorLayer.uvTransform.uvOffset + colorLayer.uvTransform.scale*out_uv).rgb,1.0);
-        //vec4 color = vec4(vHeight,vHeight,vHeight,1.0);
+        
         gPosition = vec4(posCamSpace.xyz,0.0);
         
         vec3 dictFromLightToPlanetSurface = normalize(shadowSourceWorldPos-vsPositionWorldSpace);
         //dictFromLightToPlanetSurface = -dictFromLightToPlanetSurface;
-        
-     
         float diff = max(dot(dictFromLightToPlanetSurface,normalVec),0.0);
         // vec3 lightColor = vec3(1.0,1.0,1.0) * diff;
         if(chunkEdge&&isBorder(out_uv)){
             color = vec4(1.0,0.0,0.0,1.0);
         }
         else if(isShadow){
-           color*=diff;
+           color.xyz*=diff;
            //vec3 reflectedLight = reflect(dictFromLightToPlanetSurface,normalVec);
            //vec4 specular = vec4(1.0)*pow(max(dot(vec3(0.0,0.0,-1.0), reflectedLight), 0.0), 32)*10;
            //color+=specular;
@@ -898,6 +895,8 @@ export class RenderablePlanet extends RenderableObject{
         this.initLayers();
         layers.forEach(layer=>this.addLayer(layer));
         this.initProps(shadow);
+        this.shadowSourceWorldPos = new THREE.Vector3()
+        this.shadowSource = shadow.shadowSource;
         this.addedToScene = false;
 
 
@@ -926,10 +925,11 @@ export class RenderablePlanet extends RenderableObject{
             heightOffset:0,
             shadow:{
                 isShadow:shadow.isShadow,
-                shadowSource:shadow.shadowSource,
-                shadowSourceWorldPos: new THREE.Vector3()
             }
         }
+
+
+
     }
 
     createGlobalShaderUniformStructure(){
@@ -963,7 +963,7 @@ export class RenderablePlanet extends RenderableObject{
             },
             modelTransform:{value:new THREE.Matrix4()},
             isShadow:{value:false},
-            shadowSourceWorldPos:{value:this.props.shadow.shadowSourceWorldPos}
+            shadowSourceWorldPos:{value:this.shadowSourceWorldPos}
         }
     }
 
@@ -976,6 +976,12 @@ export class RenderablePlanet extends RenderableObject{
         uiComponent.add(this.props,"heightOffset",-1000000,1000000,1)
         uiComponent.add(this.props.shadow,"isShadow");
     }
+
+
+    getProps() {
+        return this.props;
+    }
+
 
     getGlobalShader(){
         return new THREE.ShaderMaterial({
@@ -1304,6 +1310,8 @@ export class RenderablePlanet extends RenderableObject{
         uniforms.modelTransform.value = renderData.modelTransform;
         uniforms.chunkEdge.value = this.props.chunkEdge;
         uniforms.isShadow.value = this.props.shadow.isShadow;
+
+
         this.setLayerUniforms(this.heightLayer,chunk,uniforms,"heightLayer");
         this.setLayerUniforms(this.colorLayer,chunk,uniforms,"colorLayer");
 
@@ -1364,10 +1372,10 @@ export class RenderablePlanet extends RenderableObject{
 
 
     updateShadowSourceWorldPosition(){
-        if (this.props.shadow.isShadow && this.props.shadow.shadowSource!==null){
-            const shadowSourceNode = appContext.scene.findNodeByIdentifier(this.props.shadow.shadowSource);
+        if (this.props.shadow.isShadow && this.shadowSource!==null){
+            const shadowSourceNode = appContext.scene.findNodeByIdentifier(this.shadowSource);
             if (shadowSourceNode){
-                this.props.shadow.shadowSourceWorldPos.copy(shadowSourceNode.getLocalPosition());
+                this.shadowSourceWorldPos.copy(shadowSourceNode.getLocalPosition());
             }
         }
     }
