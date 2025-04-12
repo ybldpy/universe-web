@@ -2,17 +2,19 @@
   <el-card
       ref="panelRef"
       v-if="visible"
-      :class="['gui-panel', customClass]"
+      :class="'gui-panel'"
       :style="panelStyle"
       shadow="never"
       body-style="padding: 0;"
       @mousedown="startDrag"
-
   >
     <el-button class="collapse-btn" @click.stop="panelClose" size="small" style="padding-bottom: 10px" text>
       <el-icon><Minus /></el-icon>
-    </el-button >
-    <GuiGroup v-for="(ui, index) in model" :key="index" :model="ui" />
+    </el-button>
+    <GuiGroup v-for="(ui, index) in nodesUi" :key="" :model="ui" />
+    <el-select id="focusSelect">
+
+    </el-select>
   </el-card>
 </template>
 
@@ -25,7 +27,7 @@ import { Minus } from '@element-plus/icons-vue'
 const props = defineProps({
   style: Object,
   customClass: String,
-  model: Array,
+  nodesUi: Array,
   visible: {
     type: Boolean,
     default: true
@@ -40,7 +42,6 @@ function panelClose() {
 
 const panelRef = ref(null)
 const panelStyle = reactive({
-  position: 'absolute',
   top: '20px',
   left: '20px'
 })
@@ -76,8 +77,9 @@ function stopDrag() {
 
 <style scoped>
 .gui-panel {
-  width: 300px;
-  height: 75vh;
+  position: fixed;
+  width: 20%;
+  height: 75%;
   overflow-y: auto;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 10px;

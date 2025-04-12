@@ -21,14 +21,22 @@ function slerpCameraLookAtToNode(camera,node,t){
     camera.quaternion.slerp(targetQuat,t);
 }
 
-export class Navigator{
+export class NavigationController{
 
     constructor(camera,interactionHandler) {
         this.camera = camera;
         this.orbitNavigator = new OrbitNavigator();
         this.pathNavigator = new PathNavigator();
         this.interactionHandler = interactionHandler;
+        this.props = {
+            focusNode: this.orbitNavigator.getFocusNode().getIdentifier(),
+            changeFocusNodeCallback: (newFocusNode)=>{
+                const node = appContext.scene.findNodeByIdentifier(newFocusNode);
+                this.flyTo(node);
+            }
+        }
     }
+
     update(deltaTime){
         this.interactionHandler.updateState(deltaTime);
         if (this.pathNavigator.isFlying()){
@@ -38,6 +46,25 @@ export class Navigator{
             this.orbitNavigator.updateCamera(this.camera,deltaTime,this.interactionHandler);
         }
     }
+
+
+    setFocusNode(focusNode){
+        this.orbitNavigator.setFocusNode(focusNode);
+    }
+    getFocusNode(){
+        return this.orbitNavigator.getFocusNode();
+    }
+    flyTo(targetNode){
+        this.pathNavigator.flyTo(targetNode);
+    }
+
+
+    getProps(){
+    }
+
+
+
+
 }
 
 
@@ -176,7 +203,7 @@ class OrbitNavigator{
     }
 
     updateCamera(camera,deltaTime,interactionHandler){
-        deltaTime = Math.min(deltaTime,0.1);
+        deltaTime = Math.min(deltaTime,0.05);
         this.rotate(camera,deltaTime,this.focusNode,interactionHandler);
         this.pushToSurface(camera,deltaTime,this.focusNode,interactionHandler);
     }
@@ -205,7 +232,7 @@ export class PathNavigator{
             return;
         }
         this.startPosition.copy(camera.position);
-        this.beginNode = appContext.navigator.orbitNavigator.getFocusNode();
+        this.beginNode = appContext.navigator.getFocusNode();
         this.hasPath = true;
     }
 
@@ -252,7 +279,6 @@ export class PathNavigator{
             appContext.navigator.orbitNavigator.setFocusNode(this.targetNode);
             this.startPosition.add(this.beginNode.getLocalPosition());
         }
-        console.log(appContext.navigator.orbitNavigator.getFocusNode().getIdentifier())
         if (t < 0.05){
             this.reset();
         }

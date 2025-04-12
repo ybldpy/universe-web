@@ -10,7 +10,7 @@ import {
 import {RenderablePlanet} from "./renderable/globeBrowsing";
 import {Transformation} from "./rendering/base";
 // import {RenderableBackgroundSphere} from "./renderableBackgroundSphere";
-import {Navigator} from "./navigation/navigator";
+import {NavigationController} from "./navigation/navigator";
 import {InteractionHandler} from "./interaction/interactionHandler";
 import {Timer} from "three/addons/misc/Timer.js";
 import {appContext} from "./applicationContext";
@@ -20,7 +20,7 @@ import {AssetManager} from "./manage/assetManage";
 import {BACKEND_API,PARAMETERS} from "../api";
 import {RenderableModel} from "./renderable/renderableModel";
 import {createApp,reactive} from "vue";
-import UiComponent from "./GUI/astroVisGUI.vue";
+import UiComponent from "./GUI/AstroVisGUI.vue";
 import {UIManager} from "./GUI/GuiManager";
 
 class App{
@@ -41,7 +41,7 @@ class App{
         this.camera = camera;
         this.camera.position.set(0,0,6000e5);
         this.camera.lookAt(0,0,0);
-        this.navigator = new Navigator(this.camera,new InteractionHandler(webGlRender.domElement));
+        this.navigator = new NavigationController(this.camera,new InteractionHandler(webGlRender.domElement));
         appContext.navigator = this.navigator;
         this.assetManager = new AssetManager();
         this.assetManager.addAssets(defaultAssets(),this.scene);
@@ -56,9 +56,9 @@ class App{
         createSolarSystemPlantsOrbitNode().forEach((node)=>{
             this.scene.addNode(node)
         });
-        this.navigator.orbitNavigator.setFocusNode(this.scene.findNodeByIdentifier("earth"));
+        this.navigator.setFocusNode(this.scene.findNodeByIdentifier("earth"));
         this.timer = new Timer();
-        this.stat = new Stats();
+        // this.stat = new Stats();
         document.body.appendChild(this.stat.dom);
         this.initUI();
 
@@ -104,9 +104,9 @@ class App{
         this.navigator.update(deltaTime);
         this.camera.updateMatrixWorld(true)
         this.renderEngine.updateScene();
-        this.stat.begin()
+        // this.stat.begin()
         this.renderEngine.render();
-        this.stat.end()
+        // this.stat.end()
     }
 
     addGraphNode(nodeJson){
@@ -129,8 +129,8 @@ class App{
 const uiContainer = reactive([])
 
 const renderer = new THREE.WebGLRenderer({logarithmicDepthBuffer:true});
-import { VRButton } from 'three/addons/webxr/VRButton.js';
-document.body.appendChild( VRButton.createButton( renderer ) );
+// import { VRButton } from 'three/addons/webxr/VRButton.js';
+// document.body.appendChild( VRButton.createButton( renderer ) );
 renderer.xr.enabled = true;
 renderer.setSize( screen.width,screen.height );
 document.body.appendChild( renderer.domElement );
