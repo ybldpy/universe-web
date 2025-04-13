@@ -4,6 +4,7 @@ import {Matrix4, ShaderMaterial} from "three";
 import {appContext} from "../applicationContext";
 import {RenderablePlanet} from "../renderable/globeBrowsing";
 import {RENDERABLE_OBJECT_TYPES} from "../manage/renderableObjectManage"
+import node from "three/src/nodes/core/Node";
 
 
 
@@ -126,9 +127,6 @@ export class SceneGraphNode{
             [this.identifier]: null
         }
 
-
-        this.setupUI()
-
     }
 
     getProps(){
@@ -138,10 +136,6 @@ export class SceneGraphNode{
         return this.props;
     }
 
-
-    setupUI(){
-        appContext["uiManager"].addSceneNodeUi(this.getProps());
-    }
 
     getReachRadius(){
         return this.reachRadius;
@@ -276,6 +270,14 @@ export class Scene{
         return nodes;
     }
 
+    getAllNodeIdentifiers(){
+        const identifiers = [];
+        for(let i in this.nodes){
+            identifiers.push(this.nodes[i].getIdentifier());
+        }
+        return identifiers;
+    }
+
 
     /**
      *
@@ -284,6 +286,7 @@ export class Scene{
     addNode(node){
         this.nodes[node.getIdentifier()] = node;
         this.nodes[node.getParentIdentifier()].addChild(node);
+        appContext["uiManager"].addSceneNodeUi(node.getProps(),node.getIdentifier());
     }
 
     update(camera){

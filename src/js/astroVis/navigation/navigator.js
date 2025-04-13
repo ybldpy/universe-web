@@ -28,13 +28,6 @@ export class NavigationController{
         this.orbitNavigator = new OrbitNavigator();
         this.pathNavigator = new PathNavigator();
         this.interactionHandler = interactionHandler;
-        this.props = {
-            focusNode: this.orbitNavigator.getFocusNode().getIdentifier(),
-            changeFocusNodeCallback: (newFocusNode)=>{
-                const node = appContext.scene.findNodeByIdentifier(newFocusNode);
-                this.flyTo(node);
-            }
-        }
     }
 
     update(deltaTime){
@@ -54,15 +47,13 @@ export class NavigationController{
     getFocusNode(){
         return this.orbitNavigator.getFocusNode();
     }
-    flyTo(targetNode){
-        this.pathNavigator.flyTo(targetNode);
+    flyTo(targetNodeName){
+        const flyToNode = appContext.scene.findNodeByIdentifier(targetNodeName);
+        if (flyToNode===null || flyToNode===undefined){
+            return
+        }
+        this.pathNavigator.flyTo(flyToNode,this.camera);
     }
-
-
-    getProps(){
-    }
-
-
 
 
 }
@@ -275,8 +266,8 @@ export class PathNavigator{
         const increment = moveVec.length() * speed * deltaTime * 0.1;
         camera.position.add(dict.multiplyScalar(increment));
 
-        if (!sameNode&&this.targetNode.getIdentifier() != appContext.navigator.orbitNavigator.getFocusNode().getIdentifier() && t < 0.5){
-            appContext.navigator.orbitNavigator.setFocusNode(this.targetNode);
+        if (!sameNode&&this.targetNode.getIdentifier() != appContext.navigator.getFocusNode().getIdentifier() && t < 0.5){
+            appContext.navigator.setFocusNode(this.targetNode);
             this.startPosition.add(this.beginNode.getLocalPosition());
         }
         if (t < 0.05){

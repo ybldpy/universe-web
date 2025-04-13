@@ -1,20 +1,29 @@
 <template>
   <el-card
       ref="panelRef"
-      v-if="visible"
+      v-show="visible"
       :class="'gui-panel'"
       :style="panelStyle"
       shadow="never"
       body-style="padding: 0;"
       @mousedown="startDrag"
   >
-    <el-button class="collapse-btn" @click.stop="panelClose" size="small" style="padding-bottom: 10px" text>
+    <el-button class="collapse-btn" @click.stop="panelClose" size="small" text>
       <el-icon><Minus /></el-icon>
     </el-button>
-    <GuiGroup v-for="(ui, index) in nodesUi" :key="" :model="ui" />
-    <el-select id="focusSelect">
 
-    </el-select>
+    <el-form :style="{marginTop:'20px'}">
+      <el-form-item label="Focus Node">
+        <el-select :model-value="focusNode" @update:modelValue="(val)=>{emit('update:focusNode', val)}">
+          <el-option v-for="name in nodeIdentifiers" :key="name" :value="name" :label="name" />
+        </el-select>
+      </el-form-item>
+
+      <el-form-item label="Scene" label-position="top" :style="{width:'100%'}">
+        <GuiGroup v-for="(ui, index) in nodesProps"  :model="ui" />
+      </el-form-item>
+    </el-form>
+
   </el-card>
 </template>
 
@@ -24,17 +33,22 @@ import GuiGroup from './GuiGroup.vue'
 import { ElIcon } from 'element-plus'
 import { Minus } from '@element-plus/icons-vue'
 
+
+
+
 const props = defineProps({
   style: Object,
   customClass: String,
-  nodesUi: Array,
-  visible: {
-    type: Boolean,
-    default: true
-  }
+  nodesProps: Array,
+  nodeIdentifiers: Array,
+  focusNode: String,
+  visible: Boolean
 })
 
-const emit = defineEmits(['update:visible'])
+
+console.log(props.nodesProps)
+
+const emit = defineEmits(['update:visible','update:focusNode'])
 
 function panelClose() {
   emit('update:visible',false)
@@ -95,6 +109,7 @@ function stopDrag() {
   position: absolute;
   top: 8px;
   right: 8px;
+  margin-bottom: 30px;
   z-index: 102;
 }
 </style>

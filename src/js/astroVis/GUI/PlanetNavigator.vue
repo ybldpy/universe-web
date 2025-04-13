@@ -42,11 +42,18 @@ const computePosition = function(focusName,index){
   const radius = 400
 
 
-  const focusIndex = parameters.planets.findIndex((v,i)=>v.name === focusName)
+  let focusIndex = parameters.planets.findIndex((v,i)=>{
+    if (v.name === undefined || v.name === null){return false;}
+    return v.name.toLowerCase() === focusName.toLowerCase()
+  })
+  if (focusIndex === -1){
+    focusIndex = parameters.planets.findIndex((v,i)=>v.name === 'Other')
+  }
   const windowWidth = window.innerWidth;
   const angle = (index - focusIndex) * 50; // 调整角度
   const x = windowWidth/2 + radius * Math.sin(angle);
   const y = radius * (Math.cos(angle) - 0.8);
+
 
   return {
     left: `${x}px`,
@@ -69,7 +76,7 @@ const computePosition = function(focusName,index){
   position: fixed;
   bottom: 0;
   width: 100%;
-  z-index: 100;
+  z-index: 80;
 }
 
 .space-background {

@@ -1,6 +1,6 @@
 <template>
   <div class="gui-group">
-    <template v-for="(value, key) in model" :key="key">
+    <template v-for="(value, key) in model">
       <!-- Boolean 类型：开关 -->
       <el-form-item v-if="typeof value === 'boolean'" :label="key" class="gui-item" @click.stop="">
         <el-switch v-model="model[key]" />

@@ -30,9 +30,8 @@ class App{
 
     constructor(webGlRender,threeJsScene,camera,uiContainer) {
         this.renderEngine = new RenderEngine(webGlRender,threeJsScene,camera);
-        appContext["uiManager"] = new UIManager();
-
-
+        this.stat = new Stats();
+        appContext["uiManager"] = new UIManager(this,this.stat);
         this.scene = new Scene();
         this.sceneGraphNodeFactory = new SceneGraphNodeFactory()
         this.renderEngine.setScene(this.scene);
@@ -58,36 +57,11 @@ class App{
         });
         this.navigator.setFocusNode(this.scene.findNodeByIdentifier("earth"));
         this.timer = new Timer();
-        // this.stat = new Stats();
-        document.body.appendChild(this.stat.dom);
-        this.initUI();
 
         //new RenderableModel({modelUrl:"/data/3dModel/EinsteinProbe.fbx"})
     }
 
 
-    initUI(){
-        const nodeIds = [];
-
-        this.scene.getAllNodes().forEach(node=>{
-            // const nodeUI = sceneFolder.addFolder(node.getIdentifier());
-            // node.setupUI();
-            if (node.renderableObject!=null){
-               nodeIds.push(node.getIdentifier());
-            }
-        });
-        const focus = {
-            focusNode:this.navigator.orbitNavigator.getFocusNode().getIdentifier()
-        }
-        // this.focusNodeUI = this.ui.add(focus,"focusNode",nodeIds).onChange(value=>{
-        //     const nextFocusNode = this.scene.findNodeByIdentifier(value);
-        //     this.navigator.pathNavigator.flyTo(nextFocusNode,this.camera);
-        // });
-        //
-        // this.ui.add({jumpToDataManagement:()=>{
-        //     window.location.href = "/dataManagement.html"
-        //     }}, 'jumpToDataManagement').name('Go to upload data');
-    }
 
 
 
@@ -104,29 +78,38 @@ class App{
         this.navigator.update(deltaTime);
         this.camera.updateMatrixWorld(true)
         this.renderEngine.updateScene();
-        // this.stat.begin()
+        this.stat.begin()
         this.renderEngine.render();
-        // this.stat.end()
+        this.stat.end()
     }
-
     addGraphNode(nodeJson){
         const node = this.sceneGraphNodeFactory.createNode(nodeJson,this.scene)
         if (node == null){return;}
         this.scene.addNode(node);
     }
-
-
-
-
     resize(){
         this.renderEngine.resize(window.innerWidth,window.innerHeight);
+    }
+
+    getFocusNodeName(){
+        return this.navigator.getFocusNode().getIdentifier()
+    }
+
+
+    getNodeIdentifiers(){
+
+        return this.scene.getAllNodes()
+
+    }
+
+    flyTo(targetName){
+        this.navigator.flyTo(targetName)
     }
 
 }
 
 
 
-const uiContainer = reactive([])
 
 const renderer = new THREE.WebGLRenderer({logarithmicDepthBuffer:true});
 // import { VRButton } from 'three/addons/webxr/VRButton.js';
@@ -146,7 +129,7 @@ window.onresize = ()=>{
 console.log(app.getUIManager().getSceneNodesUi());
 
 const uiComp = createApp(UiComponent,{
-    model:app.getUIManager().getSceneNodesUi()
+    uiManager:app.getUIManager()
 })
 uiComp.mount("#UI")
 

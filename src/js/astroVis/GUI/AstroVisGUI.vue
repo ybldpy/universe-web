@@ -1,22 +1,25 @@
 <template>
 
-    <ScenePanel :model="model" class="gui-panel" v-model:visible="scenePanelVisible"></ScenePanel>
+  <div v-show="uiShow">
 
 
-<!--  <Instruction @instruction-complete="instructionShow = false;localStorage.setItem('instructionComplete','yes')" v-if="instructionShow"></Instruction>-->
-  <PlanetNavigator :planets="planets" :focus="focus" @planet-select="select => {focus = select}"></PlanetNavigator>
-  <ToolBar @upload-click="moveToUpload" @setting-click="scenePanelVisible = true"></ToolBar>
+    <ScenePanel :nodesProps="sceneNodesUi" :node-identifiers="nodeIdentifiers" class="gui-panel" v-model:focus-node="focusNodeName" v-model:visible="scenePanelVisible"></ScenePanel>
+
+    <Instruction @instruction-complete="onInstructionComplete" v-if="instructionShow"></Instruction>
+    <PlanetNavigator :planets="planets" :focus="focusNodeName" @planet-select="select => {focusNodeName = select}"></PlanetNavigator>
+    <ToolBar @hide-click="uiShow = !uiShow" @upload-click="moveToUpload" @setting-click="scenePanelVisible = !scenePanelVisible"></ToolBar>
+
+  </div>
+
+
+
 
 </template>
 
-<script setup>
-import { reactive,ref} from 'vue'
+<script setup lang="ts">
+import {reactive, ref, watch} from 'vue'
 import ScenePanel from "./ScenePanel.vue";
-const scenePanelVisible = ref(false)
-defineProps({
-  model:Array,
-})
-
+import type {UIManager} from "./GuiManager";
 import {
   InfoFilled,
   SwitchFilled,
@@ -28,7 +31,48 @@ import PlanetNavigator from "./PlanetNavigator.vue";
 import ToolBar from "./ToolBar.vue";
 
 
+
+const scenePanelVisible = ref(false)
+const parameters = defineProps<{
+  uiManager: UIManager
+}>()
+
+
+
+
+const sceneNodesUi = parameters.uiManager.getSceneNodesUi()
+const focusNodeName = ref(parameters.uiManager.getFocusNodeName())
+const nodeIdentifiers = parameters.uiManager.getNodeIdentifiers()
+watch(focusNodeName, (newVal, oldVal) => {
+  console.log(newVal)
+  if (newVal === oldVal) {
+    return;
+  }
+  parameters.uiManager.flyTo(newVal.toLowerCase())
+})
+
+
+
+const uiShow = ref(true)
+document.onkeydown = (e) => {
+  if (e.key==='c' || e.key === 'C'){
+    uiShow.value = !uiShow.value
+  }else if (true){
+
+  }
+
+
+
+
+}
+
+
+
 const planets = [
+  {
+    name:"Sun",
+    imageUrl: "/data/asset/astroVisGUI/Planets/Sun.png",
+  },
   {
     name:"Earth",
     imageUrl: "/data/asset/astroVisGUI/Planets/Earth.png",
@@ -38,7 +82,7 @@ const planets = [
     imageUrl: "/data/asset/astroVisGUI/Planets/Jupiter.png",
   },
   {
-    Mars: "Mars",
+    name: "Mars",
     imageUrl: "/data/asset/astroVisGUI/Planets/Mars.png",
   },
   {
@@ -64,11 +108,21 @@ const planets = [
   {
     name:"Venus",
     imageUrl: "/data/asset/astroVisGUI/Planets/Venus.png"
+  },
+  {
+    name: "Other",
+    imageUrl: ""
   }
 ]
 
 
 const focus = ref("Earth")
+
+
+const onInstructionComplete = () => {
+  localStorage.setItem('instructionComplete','yes');
+  instructionShow.value = false;
+}
 
 const moveToUpload = function (){
 
@@ -76,38 +130,10 @@ const moveToUpload = function (){
 
 }
 
-const buttons = [
-  {
-    title: '信息',
-    icon: InfoFilled,
-    active: false,
-    action: () => console.log('信息按钮点击')
-  },
-  {
-    title: '调节参数',
-    icon: SwitchFilled,
-    active: false,
-    action: () => scenePanelVisible.value = true
-  },
-  {
-    title: '回到顶部',
-    icon: Top,
-    active: true,
-    action: () => console.log('回到顶部按钮点击')
-  },
-  {
-    title: '隐藏视图',
-    icon: View,
-    active: false,
-    action: () => console.log('隐藏视图按钮点击')
-  }
-]
-
+console.log(localStorage.getItem('instructionComplete'))
 
 const instructionComplete = localStorage.getItem("instructionComplete")
-const instructionShow = ref(instructionComplete===undefined || instructionComplete===null?true:false)
-
-
+const instructionShow = ref(instructionComplete!=='yes')
 
 
 </script>
