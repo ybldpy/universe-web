@@ -49,7 +49,7 @@ class App{
         const sceneGraphNode = new SceneGraphNode({identifier:"galaxy"});
         sceneGraphNode.parentNode = this.scene.findNodeByIdentifier("root");
         //sceneGraphNode.renderableObject = new RenderableBackgroundSphere(1e20,"/data/eso_dark.jpg");
-        this.scene.addNode(createStarsTestNode("stars","speck","/data/stars/stars.speck",4.0));
+        this.scene.addNode(createStarsTestNode("stars","speck","/data/stars/stars.speck",4.8));
         // this.scene.addNode(createStarsTestNode("Gaia","streamOctree","/data/stars/octree",5.0))
         // this.scene.addNode(createStarsTestNode("LAMOST","streamOctree","/data/stars/octree_LA",6.0))
         createSolarSystemPlantsOrbitNode().forEach((node)=>{

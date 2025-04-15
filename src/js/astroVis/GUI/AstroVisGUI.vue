@@ -74,28 +74,24 @@ const planets = [
     imageUrl: "/data/asset/astroVisGUI/Planets/Sun.png",
   },
   {
-    name:"Earth",
-    imageUrl: "/data/asset/astroVisGUI/Planets/Earth.png",
+    name: "Mercury",
+    imageUrl: "/data/asset/astroVisGUI/Planets/Mercury.png",
   },
   {
-    name: "Jupiter",
-    imageUrl: "/data/asset/astroVisGUI/Planets/Jupiter.png",
+    name:"Venus",
+    imageUrl: "/data/asset/astroVisGUI/Planets/Venus.png"
+  },
+  {
+    name:"Earth",
+    imageUrl: "/data/asset/astroVisGUI/Planets/Earth.png",
   },
   {
     name: "Mars",
     imageUrl: "/data/asset/astroVisGUI/Planets/Mars.png",
   },
   {
-    name: "Mercury",
-    imageUrl: "/data/asset/astroVisGUI/Planets/Mercury.png",
-  },
-  {
-    name:"Neptune",
-    imageUrl: "/data/asset/astroVisGUI/Planets/Neptune.png",
-  },
-  {
-    name:"Pluto",
-    imageUrl: "/data/asset/astroVisGUI/Planets/Pluto.png",
+    name: "Jupiter",
+    imageUrl: "/data/asset/astroVisGUI/Planets/Jupiter.png",
   },
   {
     name:"Saturn",
@@ -105,10 +101,17 @@ const planets = [
     name:"Uranus",
     imageUrl: "/data/asset/astroVisGUI/Planets/Uranus.png",
   },
+
   {
-    name:"Venus",
-    imageUrl: "/data/asset/astroVisGUI/Planets/Venus.png"
+    name:"Neptune",
+    imageUrl: "/data/asset/astroVisGUI/Planets/Neptune.png",
   },
+  {
+    name:"Pluto",
+    imageUrl: "/data/asset/astroVisGUI/Planets/Pluto.png",
+  },
+
+
   {
     name: "Other",
     imageUrl: ""
@@ -133,7 +136,7 @@ const moveToUpload = function (){
 console.log(localStorage.getItem('instructionComplete'))
 
 const instructionComplete = localStorage.getItem("instructionComplete")
-const instructionShow = ref(instructionComplete!=='yes')
+const instructionShow = ref(instructionComplete !== 'yes')
 
 
 </script>
