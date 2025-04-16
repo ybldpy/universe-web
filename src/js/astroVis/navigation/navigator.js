@@ -211,8 +211,15 @@ export class PathNavigator{
         this.beginNode = null;
         this.startPosition = new THREE.Vector3();
         //ms
-        this.moveCameraLookAtToTargetDuration = 1000;
+        this.moveCameraLookAtToTargetDuration = 2000;
         this.moveCameraLookAtToTargetCount = 0;
+
+        this.moveCameraPositionTargetDuration = 2500;
+        this.moveCameraPositionTargetCount = 0;
+
+
+        this.moveDone = false;
+        this.adjustCameraDone = false;
     }
 
     flyTo(node,camera){
@@ -233,8 +240,10 @@ export class PathNavigator{
         this.beginNode = null;
         this.startPosition.set(0,0,0);
         this.moveCameraLookAtToTargetCount = 0;
+        this.moveDone = false;
+        this.adjustCameraDone = false;
+        this.moveCameraPositionTargetCount = 0;
     }
-
 
     isFlying(){
         return this.targetNode!=null&&this.hasPath;
@@ -242,44 +251,61 @@ export class PathNavigator{
 
 
     rotateCamera(camera,deltaTime){
+
+        if (true){
+            const targetRotation = calcRotationBetweenCameraAndNode(camera,this.beginNode);
+            camera.quaternion.copy(targetRotation)
+        }
+
         if (this.moveCameraLookAtToTargetCount >= this.moveCameraLookAtToTargetDuration){return;}
         this.moveCameraLookAtToTargetCount += deltaTime * 10;
         const t = this.moveCameraLookAtToTargetCount/this.moveCameraLookAtToTargetDuration;
         if (t>1){
             return;
         }
-        slerpCameraLookAtToNode(camera,this.targetNode,t);
+        slerpCameraLookAtToNode(camera,this.beginNode,t);
+
     }
 
 
     moveCamera(camera,deltaTime){
-        const sameNode = this.targetNode.getIdentifier() == this.beginNode.getIdentifier();
+
+        const sameNode = this.targetNode.getIdentifier() === this.beginNode.getIdentifier();
         const moveVec = this.targetNode.getLocalPosition().clone().sub(this.startPosition);
         const dict = moveVec.clone().normalize();
-        const scaler = 1.5;
+        const scaler = 1.0;
 
+        const reachRadius = this.targetNode.getReachRadius();
         moveVec.sub(dict.clone().multiplyScalar(this.targetNode.getReachRadius()));
-        const distanceToTarget = camera.position.clone().sub(this.targetNode.getLocalPosition()).length() - this.targetNode.getReachRadius();
-        const t = distanceToTarget / moveVec.length();
+        let distanceToTarget = camera.position.clone().sub(this.targetNode.getLocalPosition()).length() - reachRadius;
+        let t = 1-distanceToTarget/(moveVec.length()-reachRadius);
+        let speed = Math.max(Math.sin(t*Math.PI),0.005) * scaler;
+        let increment = moveVec.length() * speed * deltaTime;
 
-        const speed = t > 0.5 ? 4 * t : -4 * (t - 1);
-        const increment = moveVec.length() * speed * deltaTime * 0.1;
-        camera.position.add(dict.multiplyScalar(increment));
 
-        if (!sameNode&&this.targetNode.getIdentifier() != appContext.navigator.getFocusNode().getIdentifier() && t < 0.5){
+        if (increment > distanceToTarget){
+            increment = distanceToTarget;
+        }
+        const displacement = dict.multiplyScalar(increment);
+        camera.position.add(displacement);
+
+
+        distanceToTarget-=increment;
+        t = 1-distanceToTarget/(moveVec.length()-reachRadius);
+
+        if (!sameNode && this.targetNode.getIdentifier() !== appContext.navigator.getFocusNode().getIdentifier() && t > 0.5){
             appContext.navigator.setFocusNode(this.targetNode);
             this.startPosition.add(this.beginNode.getLocalPosition());
         }
-        if (t < 0.05){
+
+        if (t>=0.99){
             this.reset();
         }
-
 
     }
 
     update(camera,deltaTime){
         if (!this.isFlying()){
-            this.reset();
             return;
         }
 

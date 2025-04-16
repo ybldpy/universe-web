@@ -38,7 +38,7 @@ class App{
         appContext.camera = camera;
         appContext.scene = this.scene;
         this.camera = camera;
-        this.camera.position.set(0,0,6000e5);
+        this.camera.position.set(2000e4,2000e4,2000e4);
         this.camera.lookAt(0,0,0);
         this.navigator = new NavigationController(this.camera,new InteractionHandler(webGlRender.domElement));
         appContext.navigator = this.navigator;

@@ -56,7 +56,7 @@ const planets = [
     {
         identifier:"earth",
         parent:"solarSystem",
-        reachRadius:6540e3,
+        reachRadius:6600000,
         transformation:{
             position:[1.5e11,0,0],
             rotation:[0,0,0],
@@ -93,7 +93,7 @@ const planets = [
     {
         identifier: "moon",
         parent:"earth",
-        reachRadius:3850e3,
+        reachRadius:4000e3,
         transformation: {
             position:[1000e5,1000e5,2050e5],
             rotation: [0,0,0],
@@ -130,7 +130,7 @@ const planets = [
     {
         identifier: "jupiter",
 
-        reachRadius: 1000e3,
+        reachRadius: 71512000,
         parent: "solarSystem",
         transformation: {
             position: [7.8e11,0,0],
@@ -175,7 +175,7 @@ const planets = [
     {
         identifier: "mars",
         parent: "solarSystem",
-        reachRadius: 3396300,
+        reachRadius: 3416190,
         transformation: {
             position: [2.066e11,0,0],
             rotation: [0,0,0],
@@ -199,7 +199,7 @@ const planets = [
     {
         identifier: "venus",
         parent: "solarSystem",
-        reachRadius: 6052000,
+        reachRadius: 6071900,
         transformation: {
             position: [1.074e11,0,0],
             rotation: [0,0,0],
@@ -222,7 +222,7 @@ const planets = [
     {
         identifier: "neptune",
         parent: "solarSystem",
-        reachRadius: 24764100,
+        reachRadius: 24784000,
         transformation: {
             position: [4498000000000,0,0],
             rotation: [0,0,0],

@@ -481,9 +481,9 @@ export class RenderableOrbit extends RenderableObject{
                 radius:{value:0},
                 linewidth:{value:2.5},
                 resolution:{value:new THREE.Vector2(1,1)},
-                diffuse:{value:new THREE.Vector3()}
+                diffuse:{value:new THREE.Vector3()},
+                opacity:{value:0.90}
             },
-            transparent:false,
             side:THREE.DoubleSide
         })
 

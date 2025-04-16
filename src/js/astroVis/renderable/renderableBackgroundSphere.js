@@ -40,8 +40,8 @@ export class RenderableBackgroundSphere extends RenderableObject{
     
     void main(){
         gl_FragDepth = calculateLogDepth(vsDepth);
-        pc_fragColor = vec4(texture(background,vUv).xyz,1.0)*0.75;
-        //pc_fragColor = vec4(1.0);
+        pc_fragColor = vec4(texture(background,vUv).xyz*0.75,1.0);
+        //pc_fragColor = vec4(0.0);
         //if(vUv.x < 0.5 && vUv.y<0.5){pc_fragColor = vec4(1.0);}
         gPosition = vec4(1.0);
     }
@@ -64,16 +64,14 @@ export class RenderableBackgroundSphere extends RenderableObject{
             version:THREE.GLSL3,
             vertexShader:RenderableBackgroundSphere.vs,
             fragmentShader:RenderableBackgroundSphere.fs,
-            //vertexColors:true,
             uniforms:{
                 background:{value:new THREE.Texture()}
             },
-            // depthTest:false,
             transparent:false,
-            side:THREE.BackSide
+            side:THREE.FrontSide
         });
         this.sphere = new THREE.Mesh(sphereGeometry,shaderMaterial);
-        // this.sphere.renderOrder = 3;
+        this.sphere.renderOrder = 4;
         this.ui = {
             hidden:false
         }
