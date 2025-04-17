@@ -290,6 +290,29 @@ const planets = [
         }
     },
     {
+        identifier: "pluto",
+        parent: "solarSystem",
+        reachRadius: 1300e3,
+        transformation: {
+            position: [5906380000e3,0,0],
+            rotation: [0,0,0],
+            scaling: [1,1,1]
+        },
+        renderableObject: {
+            type: "renderablePlanet",
+            params: {
+                radius: 1188e3,
+                layers: [
+                    {
+                        type: "color",
+                        maxLevel: 2,
+                        requestUrlFormat: "/data/asset/pluto/{z}/{y}/{x}.png"
+                    }
+                ]
+            }
+        }
+    },
+    {
         identifier: "background",
         parent: "root",
         reachRadius: 10,
@@ -335,6 +358,7 @@ export function createSolarSystemPlantsOrbitNode(){
     nodes.push(createOrbitTestNode("neptuneOrbit","neptune",solarSystem));
     nodes.push(createOrbitTestNode("venusOrbit","venus",solarSystem));
     nodes.push(createOrbitTestNode("marsOrbit","mars",solarSystem));
+    nodes.push(createOrbitTestNode("plutoOrbit","pluto",solarSystem));
 
     // nodes.push(createOrbitTestNode("marsOrbit","mars",solarSystem))
     // nodes.push(createOrbitTestNode("venusOrbit","venus",solarSystem))

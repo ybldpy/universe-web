@@ -211,7 +211,7 @@ export class PathNavigator{
         this.beginNode = null;
         this.startPosition = new THREE.Vector3();
         //ms
-        this.moveCameraLookAtToTargetDuration = 2000;
+        this.moveCameraLookAtToTargetDuration = 1500;
         this.moveCameraLookAtToTargetCount = 0;
 
         this.moveCameraPositionTargetDuration = 2500;
@@ -252,10 +252,6 @@ export class PathNavigator{
 
     rotateCamera(camera,deltaTime){
 
-        if (true){
-            const targetRotation = calcRotationBetweenCameraAndNode(camera,this.beginNode);
-            camera.quaternion.copy(targetRotation)
-        }
 
         if (this.moveCameraLookAtToTargetCount >= this.moveCameraLookAtToTargetDuration){return;}
         this.moveCameraLookAtToTargetCount += deltaTime * 10;
@@ -263,7 +259,7 @@ export class PathNavigator{
         if (t>1){
             return;
         }
-        slerpCameraLookAtToNode(camera,this.beginNode,t);
+        slerpCameraLookAtToNode(camera,this.targetNode,t);
 
     }
 

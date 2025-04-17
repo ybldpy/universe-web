@@ -68,7 +68,7 @@ export class RenderableBackgroundSphere extends RenderableObject{
                 background:{value:new THREE.Texture()}
             },
             transparent:false,
-            side:THREE.FrontSide
+            side:THREE.BackSide
         });
         this.sphere = new THREE.Mesh(sphereGeometry,shaderMaterial);
         this.sphere.renderOrder = 4;

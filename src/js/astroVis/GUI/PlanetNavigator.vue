@@ -137,8 +137,14 @@ onMounted(()=>{
   justify-content: center;
   background-size: cover;
   align-items: center;
+}
+
+.image-container:hover {
+
+  transform: scale(1.2);
 
 }
+
 
 .icon-image-container {
   position: fixed;

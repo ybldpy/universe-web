@@ -95,7 +95,7 @@ function stopDrag() {
   width: 20%;
   height: 75%;
   overflow-y: auto;
-  background: rgba(255, 255, 255, 0.95);
+  background:#E3E3E3;
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   padding: 16px;

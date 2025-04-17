@@ -11,7 +11,6 @@ export class RenderableModel extends RenderableObject{
     loadModel(url){
         const loader = new FBXLoader();
         loader.load(url,(gltf)=>{
-            console.log(gltf);
         });
     }
 
