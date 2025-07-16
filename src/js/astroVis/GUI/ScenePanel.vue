@@ -15,7 +15,7 @@
     <el-form :style="{marginTop:'20px'}">
       <el-form-item label="Focus Node">
         <el-select :model-value="focusNode" @update:modelValue="(val)=>{emit('update:focusNode', val)}">
-          <el-option v-for="name in nodeIdentifiers" :key="name" :value="name" :label="name" />
+          <el-option v-for="name in nodeIdentifiers" :key="name" :value="name" :label="name.charAt(0).toUpperCase() + name.slice(1)"/>
         </el-select>
       </el-form-item>
 

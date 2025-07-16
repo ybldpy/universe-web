@@ -6,16 +6,18 @@ export class FrameBufferRenderer{
         const width = this.renderer.domElement.clientWidth;
         const height = this.renderer.domElement.clientHeight;
         this.postProcessShaderQueue = [];
-        this.gBuffer = new THREE.WebGLRenderTarget(screen.width,
-            screen.height,{
+        const w = window.innerWidth * window.devicePixelRatio;
+        const h = window.innerHeight * window.devicePixelRatio;
+        this.gBuffer = new THREE.WebGLRenderTarget(w,
+            h,{
                 count:2,
                 format:THREE.RGBAFormat,
                 minFilter:THREE.LinearFilter,
                 magFilter:THREE.LinearFilter,
                 type:THREE.FloatType
             });
-        this.rtA = new THREE.WebGLRenderTarget(screen.width,
-            screen.height ,{
+        this.rtA = new THREE.WebGLRenderTarget(w,
+            h ,{
                 minFilter:THREE.LinearFilter,
                 magFilter:THREE.LinearFilter,
                 format:THREE.RGBAFormat,
@@ -23,8 +25,8 @@ export class FrameBufferRenderer{
                 depthBuffer:false,
                 type:THREE.FloatType
             });
-        this.rtB =  new THREE.WebGLRenderTarget(screen.width,
-            screen.height,{
+        this.rtB =  new THREE.WebGLRenderTarget(w,
+            h,{
                 minFilter:THREE.LinearFilter,
                 magFilter:THREE.LinearFilter,
                 format:THREE.RGBAFormat,
@@ -70,12 +72,13 @@ export class FrameBufferRenderer{
 
 
     resize(width,height){
-        //this.renderer.setSize(width,height)
-        // const renderTargetWidth = width * window.devicePixelRatio;
-        // const renderTargetHeight = height * window.devicePixelRatio;
-        // this.gBuffer.setSize(renderTargetWidth,renderTargetHeight);
-        // this.rtA.setSize(renderTargetWidth,renderTargetHeight)
-        // this.rtB.setSize(renderTargetWidth,renderTargetHeight);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setSize(width,height);
+        const renderTargetWidth = width * window.devicePixelRatio;
+        const renderTargetHeight = height * window.devicePixelRatio;
+        this.gBuffer.setSize(renderTargetWidth,renderTargetHeight);
+        this.rtA.setSize(renderTargetWidth,renderTargetHeight);
+        this.rtB.setSize(renderTargetWidth,renderTargetHeight);
     }
 
 

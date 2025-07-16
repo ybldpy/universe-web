@@ -30,6 +30,7 @@ const planets = [
     },
     {
         identifier: "sun",
+        selectable: true,
         parent: "sunCenter",
         reachRadius:7000e3,
         transformation: {
@@ -55,6 +56,7 @@ const planets = [
 
     {
         identifier:"earth",
+        selectable: true,
         parent:"solarSystem",
         reachRadius:6600000,
         transformation:{
@@ -93,6 +95,7 @@ const planets = [
     {
         identifier: "moon",
         parent:"earth",
+        selectable: true,
         reachRadius:4000e3,
         transformation: {
             position:[1000e5,1000e5,2050e5],
@@ -129,7 +132,7 @@ const planets = [
 
     {
         identifier: "jupiter",
-
+        selectable: true,
         reachRadius: 71512000,
         parent: "solarSystem",
         transformation: {
@@ -156,6 +159,7 @@ const planets = [
     {
         identifier: "earthAtmosphere",
         parent: "earth",
+        selectable: false,
         renderableObject: {
             type: "planetAtmosphere",
             params:{
@@ -175,6 +179,7 @@ const planets = [
     {
         identifier: "mars",
         parent: "solarSystem",
+        selectable: true,
         reachRadius: 3416190,
         transformation: {
             position: [2.066e11,0,0],
@@ -199,6 +204,7 @@ const planets = [
     {
         identifier: "venus",
         parent: "solarSystem",
+        selectable: true,
         reachRadius: 6071900,
         transformation: {
             position: [1.074e11,0,0],
@@ -222,6 +228,7 @@ const planets = [
     {
         identifier: "neptune",
         parent: "solarSystem",
+        selectable: true,
         reachRadius: 24784000,
         transformation: {
             position: [4498000000000,0,0],
@@ -245,6 +252,7 @@ const planets = [
     {
         identifier: "mercury",
         parent: "solarSystem",
+        selectable: true,
         reachRadius: 2440100,
         transformation: {
             position: [57910000e3,0,0],
@@ -269,6 +277,7 @@ const planets = [
     {
         identifier: "saturn",
         parent: "solarSystem",
+        selectable: true,
         reachRadius: 58232100,
         transformation: {
             position: [1429000000e3,0,0],
@@ -292,6 +301,7 @@ const planets = [
     {
         identifier: "pluto",
         parent: "solarSystem",
+        selectable: true,
         reachRadius: 1300e3,
         transformation: {
             position: [5906380000e3,0,0],

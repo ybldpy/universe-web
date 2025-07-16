@@ -864,7 +864,7 @@ export class RenderableStars extends RenderableObject {
             const notVisibleNodes = this.visibleNodes.filter((n)=>{
                 for(let i = 0;i<visibleNodes.length;i++){
                     delete this.notVisibleNodes[visibleNodes[i].requestUrlIndex]
-                    if (visibleNodes[i].requestUrlIndex == n.requestUrlIndex){
+                    if (visibleNodes[i].requestUrlIndex === n.requestUrlIndex){
                         return false;
                     }
                 }
@@ -891,7 +891,7 @@ export class RenderableStars extends RenderableObject {
         }
 
 
-        this.shaderMaterial.uniforms.kpc.value = 1e12;
+        this.shaderMaterial.uniforms.kpc.value = 1e14;
         this.shaderMaterial.uniforms.magExponent.value = this.prop.magExponent
         const translation = renderData.transformation.translation;
         const up = new THREE.Vector3(0,1,0);

@@ -60,6 +60,25 @@ const parameters = defineProps<{
 const sceneNodesUi = parameters.uiManager.getSceneNodesUi()
 const focusNodeName = ref(parameters.uiManager.getFocusNodeName())
 const nodeIdentifiers = parameters.uiManager.getNodeIdentifiers()
+
+// const nodeIdentifiers = computed(()=>{
+//
+//   const identifiers = [];
+//   sceneNodesUi.forEach(node => {
+//
+//     if (node.selectable){
+//       for (const key in node) {
+//         if (node.hasOwnProperty(key) && key!=='selectable') {
+//           identifiers.push(key);
+//         }
+//       }
+//     }
+//   });
+//
+//   return identifiers;
+//
+// })
+
 watch(focusNodeName, (newVal, oldVal) => {
   if (newVal === oldVal) {
     return;

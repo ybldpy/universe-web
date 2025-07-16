@@ -28,7 +28,8 @@ export class RenderEngine{
 
     resize(width,height){
         this.frameBufferRenderer.resize(width,height);
-        //this.camera.aspect = width/height;
-        //this.camera.updateProjectionMatrix();
+        //console.log(screen.width,screen.height, window.innerWidth, window.innerHeight,window.devicePixelRatio);
+        this.camera.aspect = width/height;
+        this.camera.updateProjectionMatrix();
     }
 }

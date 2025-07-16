@@ -12,9 +12,12 @@ export class UIManager{
         this.stat = stat
         document.body.appendChild(this.stat.dom);
         this.statShow = true
+
     }
-    addSceneNodeUi(prop,nodeName){
+    addSceneNodeUi(prop,nodeName,selectable){
         this.sceneUi.push(reactive(prop));
+
+        if (!selectable){return}
         this.nodeNames.push(nodeName);
     }
 

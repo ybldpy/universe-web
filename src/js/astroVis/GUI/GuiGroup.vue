@@ -1,49 +1,51 @@
 <template>
   <div class="gui-group">
     <template v-for="(value, key) in model">
-      <!-- Boolean 类型：开关 -->
-      <el-form-item v-if="typeof value === 'boolean'" :label="key.charAt(0).toUpperCase() + key.slice(1)" class="gui-item" @click.stop="">
-        <el-switch v-model="model[key]" />
-      </el-form-item>
+      <template v-if="key!=='selectable'">
+        <!-- Boolean 类型：开关 -->
+        <el-form-item v-if="typeof value === 'boolean'" :label="key.charAt(0).toUpperCase() + key.slice(1)" class="gui-item" @click.stop="">
+          <el-switch v-model="model[key]" style="--el-switch-on-color: #31ACBC"/>
+        </el-form-item>
 
-      <!-- 数字类型：滑块 -->
-      <el-form-item v-else-if="typeof value === 'number'" :label="key.charAt(0).toUpperCase() + key.slice(1)" class="gui-item" @click.stop="">
-        <el-input-number v-model="model[key]" :min="0" :max="100" :step="0.1" style="width: 90%;padding-left: 2%" />
-      </el-form-item>
+        <!-- 数字类型：滑块 -->
+        <el-form-item v-else-if="typeof value === 'number'" :label="key.charAt(0).toUpperCase() + key.slice(1)" class="gui-item" @click.stop="">
+          <el-input-number v-model="model[key]" :min="0" :max="100" :step="0.1" style="width: 90%;padding-left: 2%" />
+        </el-form-item>
 
-      <template v-else-if="isVec3(value)">
-        <el-collapse class="gui-collapse" @click.stop="">
-          <el-collapse-item :name="key" :title="key.charAt(0).toUpperCase() + key.slice(1)">
-            <el-form-item label="x">
-              <el-input-number model-value="value.x"></el-input-number>
-            </el-form-item>
-            <el-form-item label="y">
-              <el-input-number model-value="value.y"></el-input-number>
-            </el-form-item>
-            <el-form-item label="z">
-              <el-input-number model-value="value.z"></el-input-number>
-            </el-form-item>
-          </el-collapse-item>
-        </el-collapse>
+        <template v-else-if="isVec3(value)">
+          <el-collapse class="gui-collapse" @click.stop="">
+            <el-collapse-item :name="key" :title="key.charAt(0).toUpperCase() + key.slice(1)">
+              <el-form-item label="x">
+                <el-input-number model-value="value.x"></el-input-number>
+              </el-form-item>
+              <el-form-item label="y">
+                <el-input-number model-value="value.y"></el-input-number>
+              </el-form-item>
+              <el-form-item label="z">
+                <el-input-number model-value="value.z"></el-input-number>
+              </el-form-item>
+            </el-collapse-item>
+          </el-collapse>
+        </template>
+
+
+        <el-form-item v-else-if="isOptionMap(value)" :label="key.charAt(0).toUpperCase() + key.slice(1)">
+
+          <el-select v-model="model[key].selected">
+            <el-option v-for="(val,label) in model[key].optionMap" :label="label.charAt(0).toUpperCase() + label.slice(1)" :value="val" :key="label"/>
+          </el-select>
+
+        </el-form-item>
+
+        <!-- 对象嵌套：折叠继续递归 -->
+        <el-form-item v-else-if="isNested(value) && value !== null" class="gui-item nested-group" @click.stop="">
+          <el-collapse class="gui-collapse">
+            <el-collapse-item :name="key" :title="key.charAt(0).toUpperCase() + key.slice(1)">
+              <GuiGroup :model="model[key]" />
+            </el-collapse-item>
+          </el-collapse>
+        </el-form-item>
       </template>
-
-
-      <el-form-item v-else-if="isOptionMap(value)" :label="key.charAt(0).toUpperCase() + key.slice(1)">
-
-        <el-select v-model:="model[key].selected">
-          <el-option v-for="(val,label) in model[key].optionMap" :label="label.charAt(0).toUpperCase() + label.slice(1)" :value="val" :key="label"/>
-        </el-select>
-
-      </el-form-item>
-
-      <!-- 对象嵌套：折叠继续递归 -->
-      <el-form-item v-else-if="isNested(value) && value !== null" class="gui-item nested-group" @click.stop="">
-        <el-collapse class="gui-collapse">
-          <el-collapse-item :name="key" :title="key.charAt(0).toUpperCase() + key.slice(1)">
-            <GuiGroup :model="model[key]" />
-          </el-collapse-item>
-        </el-collapse>
-      </el-form-item>
     </template>
   </div>
 </template>

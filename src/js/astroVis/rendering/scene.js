@@ -86,13 +86,21 @@ export class SceneGraphNodeFactory{
             if (type===undefined){return null;}
             renderableObject = new type(renderable["params"])
         }
+
+
+
+        const selectable = nodeParams.selectable ?? false;
         const sceneGraphNode = new SceneGraphNode({
             identifier:identifier,
             transformation:new Transformation(position, rotationMat, scaling),
             parentNode:parentNode,
             renderableObject:renderableObject,
-            reachRadius:reachRadius
+            reachRadius:reachRadius,
+            selectable:selectable
         });
+
+
+
 
         return sceneGraphNode
 
@@ -110,7 +118,7 @@ export class SceneGraphNode{
 
 
 
-    constructor({reachRadius = 10,identifier = "", transformation = new Transformation(), parentNode = null, renderableObject = null}){
+    constructor({reachRadius = 10,identifier = "", transformation = new Transformation(), parentNode = null, renderableObject = null,selectable = false}){
         this.identifier = identifier;
         this.parentNode = parentNode;
         this.childrenNodes = [];
@@ -124,9 +132,10 @@ export class SceneGraphNode{
         this.modelTransformionCached = new THREE.Matrix4();
         this.localPosition = new THREE.Vector3();
         this.props = {
-            [this.identifier]: null
+            [this.identifier]: null,
         }
 
+        appContext["uiManager"].addSceneNodeUi(this.getProps(),this.getIdentifier(),selectable);
     }
 
     getProps(){
@@ -150,7 +159,13 @@ export class SceneGraphNode{
         return this.localPosition.clone();
     }
 
+    getBoundingSphere(){
+        return this.getReachRadius();
+    }
 
+    getReachRadius(){
+        return this.reachRadius;
+    }
 
     calcLocalPosition(){
         const focusNode = appContext.navigator.orbitNavigator.getFocusNode();
@@ -286,7 +301,7 @@ export class Scene{
     addNode(node){
         this.nodes[node.getIdentifier()] = node;
         this.nodes[node.getParentIdentifier()].addChild(node);
-        appContext["uiManager"].addSceneNodeUi(node.getProps(),node.getIdentifier());
+
     }
 
     update(camera){

@@ -210,6 +210,7 @@ export class PathNavigator{
         this.targetNode = null;
         this.beginNode = null;
         this.startPosition = new THREE.Vector3();
+        this.pathLength = 0;
         //ms
         this.moveCameraLookAtToTargetDuration = 1500;
         this.moveCameraLookAtToTargetCount = 0;
@@ -232,6 +233,7 @@ export class PathNavigator{
         this.startPosition.copy(camera.position);
         this.beginNode = appContext.navigator.getFocusNode();
         this.hasPath = true;
+        this.pathLength = this.targetNode.getLocalPosition().distanceTo(this.beginNode.getLocalPosition());
     }
 
     reset() {
@@ -263,6 +265,46 @@ export class PathNavigator{
 
     }
 
+    calcSpeed(traveledDistance,camera){
+        const startPosition = this.beginNode.getLocalPosition();
+        const endPosition = this.targetNode.getLocalPosition();
+
+        const distanceToStartPosition = startPosition.distanceTo(camera.position);
+        const distanceToEndPosition = endPosition.distanceTo(camera.position);
+
+        const speed = Math.min(distanceToEndPosition,distanceToEndPosition);
+
+        const dampenDistanceFactor = 3.0;
+        let startUpDistance = this.beginNode.getBoundingSphere() * dampenDistanceFactor;
+        let closeUpDistance = this.targetNode.getBoundingSphere() * dampenDistanceFactor;
+
+        const maxDistance = 1e12;
+        startUpDistance = Math.min(maxDistance,startUpDistance);
+        closeUpDistance = Math.min(maxDistance,closeUpDistance);
+
+
+        if (this.pathLength < startUpDistance + closeUpDistance){
+            startUpDistance = 0.4 * this.pathLength;
+            closeUpDistance = startUpDistance;
+        }
+
+        let dampeningFactor = 1;
+        if (traveledDistance < startUpDistance){
+            dampeningFactor = traveledDistance / startUpDistance;
+        }else {
+            const remainingDistance = camera.position.distanceTo(this.targetNode.getLocalPosition());
+            if (remainingDistance < closeUpDistance){
+                dampeningFactor = remainingDistance / closeUpDistance;
+            }
+        }
+
+        dampeningFactor = Math.max(0,dampeningFactor);
+        dampeningFactor = Math.min(1,dampeningFactor);
+
+        dampeningFactor = Math.sin(dampeningFactor*Math.PI/2)+0.01;
+        return speed * dampeningFactor;
+    }
+
 
     moveCamera(camera,deltaTime){
 
@@ -282,7 +324,8 @@ export class PathNavigator{
         if (increment > distanceToTarget){
             increment = distanceToTarget;
         }
-        const displacement = dict.multiplyScalar(increment);
+
+        const displacement = dict.multiplyScalar(this.calcSpeed(this.pathLength - distanceToTarget,camera) * deltaTime);
         camera.position.add(displacement);
 
 

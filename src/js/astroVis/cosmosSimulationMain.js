@@ -49,7 +49,9 @@ class App{
         const sceneGraphNode = new SceneGraphNode({identifier:"galaxy"});
         sceneGraphNode.parentNode = this.scene.findNodeByIdentifier("root");
         //sceneGraphNode.renderableObject = new RenderableBackgroundSphere(1e20,"/data/eso_dark.jpg");
-        this.scene.addNode(createStarsTestNode("stars","speck","/data/stars/stars.speck",4.8));
+        this.scene.addNode(createStarsTestNode("stars","speck","/data/stars/stars.speck",6.8));
+        // this.scene.addNode(createStarsTestNode("LAMOST","streamOctree","/data/stars/octree_LA",2.0))
+        this.scene.addNode(createStarsTestNode("85Clusters","speck", "/data/stars/85Clusters.speck", 6.0));
         // this.scene.addNode(createStarsTestNode("Gaia","streamOctree","/data/stars/octree",5.0))
         // this.scene.addNode(createStarsTestNode("LAMOST","streamOctree","/data/stars/octree_LA",6.0))
         createSolarSystemPlantsOrbitNode().forEach((node)=>{
@@ -114,10 +116,10 @@ class App{
 const renderer = new THREE.WebGLRenderer({logarithmicDepthBuffer:true});
 // import { VRButton } from 'three/addons/webxr/VRButton.js';
 // document.body.appendChild( VRButton.createButton( renderer ) );
-renderer.xr.enabled = true;
-renderer.setSize( screen.width,screen.height );
+renderer.setPixelRatio( window.devicePixelRatio );
+renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
-const camera = new THREE.PerspectiveCamera( 45, screen.width / screen.height, 1, 1e25 );
+const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1e25 );
 const scene = new THREE.Scene();
 const app = new App(renderer,scene,camera);
 app.render();
