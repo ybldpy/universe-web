@@ -1,5 +1,13 @@
 # AstroVis
 
+> 🎉 Accepted to IEEE PacificVis 2026
+
+## 📄 Publication
+
+This work has been accepted to **IEEE PacificVis 2026**.  
+More details will be available soon.
+
+## 🌌 About the AstroVis
 This project aims to visualize various astronomical datasets, including the surface, terrain, and other features of celestial bodies, as well as star catalogs.
 
 Currently, we support uploading customized star catalog datasets in CSV format for visualization. Ensure that the first three columns contain the positional data of the stars. Additional attributes such as BV color index, luminosity, absolute magnitude, velocity, and speed can be visualized using different color mappings. More visualization features are on the way.
